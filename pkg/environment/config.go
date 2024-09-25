@@ -27,6 +27,9 @@ type Config struct {
 	Users struct {
 		Authorized []string `json:"authorized"`
 	} `json:"users"`
+	Whitelist struct {
+		Ips []string `json:"ips"`
+	} `json:"whitelist"`
 }
 
 // Merge, updates current config with cfg merging and override config
@@ -53,6 +56,19 @@ func GetConfigForMode(mode RunMode) (Config, error) {
 	}
 
 	return getConfig(mode, baseExtendedURL, httpClient)
+}
+
+func GetConfigForUrl(configRepo string) (Config, error) {
+	env, err := Get()
+	if err != nil {
+		return Config{}, err
+	}
+
+	httpClient := &http.Client{
+		Timeout: defaultHttpTimeout,
+	}
+
+	return getConfig(env.RunningMode, configRepo, httpClient)
 }
 
 func uniqueStr(slice []string) []string {
