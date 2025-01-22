@@ -30,7 +30,6 @@ require (
 	github.com/hasura/go-graphql-client v0.10.0 // indirect
 	github.com/jbenet/go-base58 v0.0.0-20150317085156-6237cf65f3a6 // indirect
 	github.com/joncrlsn/dque v0.0.0-20200702023911-3e80e3146ce5
-	github.com/machinebox/graphql v0.2.2
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20230904125328-1f23a7beb09a
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1
@@ -161,5 +160,3 @@ require (
 )
 
 replace github.com/docker/distribution v2.7.1+incompatible => github.com/docker/distribution v2.7.1-0.20190205005809-0d3efadf0154+incompatible
-
-replace github.com/threefoldtech/zosbase v0.1.0 => ../zosbase
