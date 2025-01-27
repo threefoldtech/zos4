@@ -58,7 +58,7 @@ func action(cli *cli.Context) error {
 
 	sk := ed25519.PrivateKey(idStub.PrivateKey(cli.Context))
 	id, err := substrate.NewIdentityFromEd25519Key(sk)
-	log.Info().Str("address", id.Address()).Msg("node address")
+	log.Info().Str("public key", string(id.PublicKey())).Msg("node public key")
 	if err != nil {
 		return err
 	}

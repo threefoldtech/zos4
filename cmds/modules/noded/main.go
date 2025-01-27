@@ -2,7 +2,6 @@ package noded
 
 import (
 	"context"
-	"crypto/ed25519"
 	"fmt"
 	"time"
 
@@ -10,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 
-	substrate "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
+	registrar "github.com/threefoldtech/zos4/pkg/registrar_light"
 	"github.com/threefoldtech/zosbase/pkg/app"
 	"github.com/threefoldtech/zosbase/pkg/capacity"
 	"github.com/threefoldtech/zosbase/pkg/environment"
@@ -21,7 +20,6 @@ import (
 	"github.com/threefoldtech/zosbase/pkg/perf/healthcheck"
 	"github.com/threefoldtech/zosbase/pkg/perf/iperf"
 	"github.com/threefoldtech/zosbase/pkg/perf/publicip"
-	registrar "github.com/threefoldtech/zosbase/pkg/registrar_light"
 	"github.com/threefoldtech/zosbase/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/utils"
 
@@ -59,7 +57,6 @@ var Module cli.Command = cli.Command{
 }
 
 func registerationServer(ctx context.Context, msgBrokerCon string, env environment.Environment, info registrar.RegistrationInfo) error {
-
 	redis, err := zbus.NewRedisClient(msgBrokerCon)
 	if err != nil {
 		return errors.Wrap(err, "fail to connect to message broker server")
@@ -233,12 +230,6 @@ func action(cli *cli.Context) error {
 	log.Info().Uint32("node", node).Uint32("twin", twin).Msg("node registered")
 
 	log.Info().Uint32("twin", twin).Msg("node has been registered")
-	idStub := stubs.NewIdentityManagerStub(redis)
-	fetchCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
-	sk := ed25519.PrivateKey(idStub.PrivateKey(fetchCtx))
-	id, err := substrate.NewIdentityFromEd25519Key(sk)
-	log.Info().Str("address", id.Address()).Msg("node address")
 	if err != nil {
 		return err
 	}

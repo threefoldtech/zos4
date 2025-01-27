@@ -12,10 +12,11 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/zbus"
+	registrar "github.com/threefoldtech/zos4/pkg/registrar_light"
 	"github.com/threefoldtech/zosbase/pkg/app"
 	"github.com/threefoldtech/zosbase/pkg/environment"
-	registrar "github.com/threefoldtech/zosbase/pkg/registrar_light"
 	"github.com/threefoldtech/zosbase/pkg/stubs"
+	zos4Stubs "github.com/threefoldtech/zosbase/pkg/stubs"
 )
 
 func green(s string) string {
@@ -37,7 +38,7 @@ func headerRenderer(ctx context.Context, c zbus.Client, h *widgets.Paragraph, r 
 		return err
 	}
 
-	identity := stubs.NewIdentityManagerStub(c)
+	identity := zos4Stubs.NewIdentityManagerStub(c)
 	registrar := stubs.NewRegistrarStub(c)
 
 	h.Text = "\n    Fetching realtime node information... please wait."
