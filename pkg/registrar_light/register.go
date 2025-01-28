@@ -5,11 +5,13 @@ import (
 	"crypto/ed25519"
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
-	substrate "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
+	"github.com/threefoldtech/tfgrid-sdk-go/node-registrar/pkg/db"
+	"github.com/threefoldtech/tfgrid-sdk-go/node-registrar/pkg/server"
 	"github.com/threefoldtech/zbus"
 	registrargw "github.com/threefoldtech/zos4/pkg/registrar_gateway"
 	zos4Stubs "github.com/threefoldtech/zos4/pkg/stubs"
@@ -69,7 +71,7 @@ func (r RegistrationInfo) WithSerialNumber(v string) RegistrationInfo {
 	return r
 }
 
-func (r *Registrar) registration(ctx context.Context, cl zbus.Client, env environment.Environment, info RegistrationInfo) (nodeID, twinID uint32, err error) {
+func (r *Registrar) registration(ctx context.Context, cl zbus.Client, env environment.Environment, info RegistrationInfo) (nodeID, twinID uint64, err error) {
 	// we need to collect all node information here
 	// - we already have capacity
 	// - we get the location (will not change after initial registration)
@@ -104,9 +106,9 @@ func registerNode(
 	env environment.Environment,
 	cl zbus.Client,
 	info RegistrationInfo,
-) (nodeID, twinID uint32, err error) {
+) (nodeID, twinID uint64, err error) {
 	var (
-		mgr    = stubs.NewIdentityManagerStub(cl)
+		mgr    = zos4Stubs.NewIdentityManagerStub(cl)
 		netMgr = stubs.NewNetworkerLightStub(cl)
 		// substrateGateway = stubs.NewSubstrateGatewayStub(cl)
 		registrarGateway = zos4Stubs.NewRegistrarGatewayStub(cl)
@@ -117,26 +119,26 @@ func registerNode(
 		return 0, 0, errors.Wrap(err, "failed to get zos bridge information")
 	}
 
-	interfaces := gridtypes.Interface{
+	interfaces := db.Interface{
 		Name: infs.Interfaces["zos"].Name,
 		Mac:  infs.Interfaces["zos"].Mac,
-		IPs: func() []string {
+		IPs: func() string {
 			ips := make([]string, 0)
 			for _, ip := range infs.Interfaces["zos"].IPs {
 				ips = append(ips, ip.IP.String())
 			}
-			return ips
+			return strings.Join(ips, "/")
 		}(),
 	}
 
-	resources := gridtypes.Resources{
+	resources := db.Resources{
 		HRU: uint64(info.Capacity.HRU),
 		SRU: uint64(info.Capacity.SRU),
-		CRU: uint64(info.Capacity.CRU),
+		CRU: info.Capacity.CRU,
 		MRU: uint64(info.Capacity.MRU),
 	}
 
-	location := gridtypes.Location{
+	location := db.Location{
 		Longitude: fmt.Sprint(info.Location.Longitude),
 		Latitude:  fmt.Sprint(info.Location.Latitude),
 		Country:   info.Location.Country,
@@ -147,8 +149,9 @@ func registerNode(
 	log.Info().Msg("registering node on blockchain")
 
 	sk := ed25519.PrivateKey(mgr.PrivateKey(ctx))
+	pubKey := sk.Public().(ed25519.PrivateKey)
 
-	if _, err := registrarGateway.EnsureAccount(ctx, env.ActivationURL, tcUrl, tcHash); err != nil {
+	if _, err := registrarGateway.EnsureAccount(ctx, twinID, pubKey); err != nil {
 		return 0, 0, errors.Wrap(err, "failed to ensure account")
 	}
 
@@ -157,36 +160,46 @@ func registerNode(
 		return 0, 0, errors.Wrap(err, "failed to ensure twin")
 	}
 
-	var serial gridtypes.OptionBoardSerial
-	if len(info.SerialNumber) != 0 {
-		serial = gridtypes.OptionBoardSerial{HasValue: true, AsValue: info.SerialNumber}
-	}
+	// var serial db.OptionBoardSerial
+	// if len(info.SerialNumber) != 0 {
+	// 	serial = gridtypes.OptionBoardSerial{HasValue: true, AsValue: info.SerialNumber}
+	// }
 
-	real := gridtypes.Node{
+	real := db.Node{
 		FarmID:      uint64(env.FarmID),
-		TwinID:      uint64(twinID),
+		TwinID:      twinID,
 		Resources:   resources,
 		Location:    location,
-		Interface:   interfaces,
+		Interfaces:  []db.Interface{interfaces},
 		SecureBoot:  info.SecureBoot,
 		Virtualized: info.Virtualized,
-		BoardSerial: serial,
+	}
+
+	req := server.NodeRegistrationRequest{
+		FarmID:      real.FarmID,
+		TwinID:      real.TwinID,
+		Resources:   real.Resources,
+		Location:    real.Location,
+		Interfaces:  real.Interfaces,
+		SecureBoot:  real.SecureBoot,
+		Virtualized: real.Virtualized,
 	}
 
 	nodeID, regErr := registrarGateway.GetNodeByTwinID(ctx, twinID)
 	if regErr != nil {
 		if errors.Is(regErr, registrargw.ErrorRecordNotFound) {
 			// node not found, create node
-			nodeID, err = registrarGateway.CreateNode(ctx, real)
+			nodeID, err = registrarGateway.CreateNode(ctx, req)
 			if err != nil {
 				return 0, 0, errors.Wrap(err, "failed to create node on chain")
 			}
+		} else {
+			return 0, 0, errors.Wrapf(regErr, "failed to get node information for twin id: %d", twinID)
 		}
-		return 0, 0, errors.Wrapf(regErr, "failed to get node information for twin id: %d", twinID)
 	}
 
 	// node exists
-	var onChain gridtypes.Node
+	var onChain db.Node
 	onChain, err = registrarGateway.GetNode(ctx, nodeID)
 	if err != nil {
 		return 0, 0, errors.Wrapf(err, "failed to get node with id: %d", nodeID)
@@ -197,15 +210,15 @@ func registerNode(
 		real.Virtualized = false
 	}
 
-	real.NodeID = uint64(nodeID)
+	real.NodeID = nodeID
 
 	// node exists. we validate everything is good
 	// otherwise we update the node
-	log.Debug().Uint32("node", nodeID).Msg("node already found on blockchain")
+	log.Debug().Uint64("node", nodeID).Msg("node already found on blockchain")
 
 	if !reflect.DeepEqual(real, onChain) {
 		log.Debug().Msgf("node data have changed, issuing an update node: %+v", real)
-		_, err := registrarGateway.UpdateNode(ctx, real)
+		_, err := registrarGateway.UpdateNode(ctx, req)
 		if err != nil {
 			return 0, 0, errors.Wrapf(err, "failed to update node data with id: %d", nodeID)
 		}
@@ -214,12 +227,9 @@ func registerNode(
 	return nodeID, twinID, err
 }
 
-func ensureTwin(ctx context.Context, registrarGateway *zos4Stubs.RegistrarGatewayStub, sk ed25519.PrivateKey) (uint32, error) {
-	identity, err := substrate.NewIdentityFromEd25519Key(sk)
-	if err != nil {
-		return 0, err
-	}
-	twinID, subErr := registrarGateway.GetTwinByPubKey(ctx, identity.PublicKey())
+func ensureTwin(ctx context.Context, registrarGateway *zos4Stubs.RegistrarGatewayStub, sk ed25519.PrivateKey) (uint64, error) {
+	pubKey := sk.Public().(ed25519.PublicKey)
+	twinID, subErr := registrarGateway.GetTwinByPubKey(ctx, pubKey)
 	if subErr.IsCode(pkg.CodeNotFound) {
 		return registrarGateway.CreateTwin(ctx, "", nil)
 	} else if subErr.IsError() {

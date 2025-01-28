@@ -2,6 +2,7 @@ package registrargw
 
 import (
 	"bytes"
+	"context"
 	"crypto/ed25519"
 	"crypto/sha256"
 	"encoding/base64"
@@ -9,7 +10,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -17,24 +17,32 @@ import (
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/rs/zerolog/log"
 	substrate "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
+	"github.com/threefoldtech/tfgrid-sdk-go/node-registrar/pkg/db"
+	"github.com/threefoldtech/tfgrid-sdk-go/node-registrar/pkg/server"
+	"github.com/threefoldtech/zbus"
 	zos4Pkg "github.com/threefoldtech/zos4/pkg"
+	"github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg"
 	"github.com/threefoldtech/zosbase/pkg/environment"
 	"github.com/threefoldtech/zosbase/pkg/gridtypes"
 )
 
+const AuthHeader = "X-Auth"
+
 type registrarGateway struct {
-	baseURL    string
 	sub        *substrate.Substrate
-	httpClient *http.Client
 	mu         sync.Mutex
+	baseURL    string
+	httpClient *http.Client
 	identity   gridtypes.Identity
+	privKey    ed25519.PrivateKey
 	nodeID     uint64
+	twinID     uint64
 }
 
 var ErrorRecordNotFound = errors.New("could not fine the reqested record")
 
-func NewRegistrarGateway(nodeID uint64, manager substrate.Manager, identity substrate.Identity) (zos4Pkg.RegistrarGateway, error) {
+func NewRegistrarGateway(cl zbus.Client, manager substrate.Manager) (zos4Pkg.RegistrarGateway, error) {
 	client := http.DefaultClient
 	env := environment.MustGet()
 	sub, err := manager.Substrate()
@@ -42,96 +50,62 @@ func NewRegistrarGateway(nodeID uint64, manager substrate.Manager, identity subs
 		return &registrarGateway{}, err
 	}
 
+	identity := stubs.NewIdentityManagerStub(cl)
+	sk := ed25519.PrivateKey(identity.PrivateKey(context.TODO()))
+
 	gw := &registrarGateway{
 		sub:        sub,
 		httpClient: client,
 		baseURL:    env.RegistrarURL,
 		mu:         sync.Mutex{},
-		identity:   identity,
+		privKey:    sk,
 	}
 	return gw, nil
 }
 
 func (r *registrarGateway) GetZosVersion() (string, error) {
-	log.Debug().Str("method", "GetZosVersion").Msg("method called")
-
 	url := fmt.Sprintf("%s/v1/nodes/%d/version", r.baseURL, r.nodeID)
-	resp, err := r.httpClient.Get(url)
-	if err != nil {
-		return "", err
-	}
+	log.Debug().Str("url", url).Msg("requesting zos version")
 
-	if resp.StatusCode != http.StatusOK {
-		return "", err
-	}
-
-	defer resp.Body.Close()
-
-	var version gridtypes.Versioned
-	err = json.NewDecoder(resp.Body).Decode(&version)
-
-	return version.Version, err
+	return r.getZosVersion(url)
 }
 
-func (r *registrarGateway) CreateNode(node gridtypes.Node) (uint32, error) {
+func (r *registrarGateway) CreateNode(node server.NodeRegistrationRequest) (uint64, error) {
+	url := fmt.Sprintf("%s/v1/nodes", r.baseURL)
 	log.Debug().
-		Str("method", "CreateNode").
+		Str("url", url).
 		Uint32("twin id", uint32(node.TwinID)).
 		Uint32("farm id", uint32(node.FarmID)).
-		Msg("method called")
+		Msg("creating node")
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	url := fmt.Sprintf("%s/v1/nodes", r.baseURL)
-	req, err := buildRequest("POST", url, node)
-	if err != nil {
-		return 0, err
-	}
-
-	// update this
-	_, err = r.httpClient.Do(req)
-	if err != nil {
-		return 0, err
-	}
-
-	return r.GetNodeByTwinID(uint32(node.TwinID))
+	id, err := r.createNode(url, node)
+	r.nodeID = id
+	return id, err
 }
 
-func (g *registrarGateway) CreateTwin(relay string, pk []byte) (uint32, error) {
-	log.Debug().Str("method", "CreateTwin").Str("relay", relay).Str("pk", hex.EncodeToString(pk)).Msg("method called")
-	g.mu.Lock()
-	defer g.mu.Unlock()
+func (g *registrarGateway) CreateTwin(relay string, pk []byte) (uint64, error) {
 	url := fmt.Sprintf("%s/v1/accounts", g.baseURL)
+	log.Debug().Str("url", url).Str("relay", relay).Str("pk", hex.EncodeToString(pk)).Msg("creating account")
 
-	var body bytes.Buffer
-	_, err := g.httpClient.Post(url, "application/json", &body)
-	if err != nil {
-		return 0, err
-	}
-
-	return g.sub.CreateTwin(g.identity, relay, pk)
-}
-
-func (g *registrarGateway) EnsureAccount(activationURL []string, termsAndConditionsLink string, termsAndConditionsHash string) (info substrate.AccountInfo, err error) {
-	log.Debug().
-		Str("method", "EnsureAccount").
-		Strs("activation url", activationURL).
-		Str("terms and conditions link", termsAndConditionsLink).
-		Str("terms and conditions hash", termsAndConditionsHash).
-		Msg("method called")
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	for _, url := range activationURL {
-		info, err = g.sub.EnsureAccount(g.identity, url, termsAndConditionsLink, termsAndConditionsHash)
-		// check other activationURL only if EnsureAccount failed with ActivationServiceError
-		if err == nil || !errors.As(err, &substrate.ActivationServiceError{}) {
-			return
-		}
-		log.Debug().Str("activation url", url).Err(err).Msg("failed to EnsureAccount with ActivationServiceError")
-	}
-	return
+	id, err := g.createTwin(url, []string{relay}, pk)
+	g.twinID = id
+	return id, err
+}
+
+func (g *registrarGateway) EnsureAccount(twinID uint64, pk []byte) (twin db.Account, err error) {
+	url := fmt.Sprintf("%s/v1/accounts", g.baseURL)
+	log.Debug().Str("url", url).Msg("ensure account")
+
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	return g.ensureAccount(twinID, url, pk)
 }
 
 func (g *registrarGateway) GetContract(id uint64) (result substrate.Contract, serr pkg.SubstrateError) {
@@ -153,100 +127,25 @@ func (g *registrarGateway) GetContractIDByNameRegistration(name string) (result 
 	return contractID, serr
 }
 
-func (r *registrarGateway) GetFarm(id uint32) (farm gridtypes.Farm, err error) {
-	log.Trace().Str("method", "GetFarm").Uint32("id", id).Msg("method called")
-
+func (r *registrarGateway) GetFarm(id uint64) (farm db.Farm, err error) {
 	url := fmt.Sprintf("%s/v1/farms/%d", r.baseURL, id)
+	log.Trace().Str("url", url).Uint64("id", id).Msg("get farm")
 
-	resp, err := r.httpClient.Get(url)
-	if err != nil {
-		return
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return
-	}
-
-	if resp.StatusCode == http.StatusNotFound {
-		return farm, ErrorRecordNotFound
-	}
-
-	defer resp.Body.Close()
-
-	err = json.NewDecoder(resp.Body).Decode(&farm)
-	if err != nil {
-		return
-	}
-
-	return
+	return r.getFarm(url)
 }
 
-func (r *registrarGateway) GetNode(id uint32) (node gridtypes.Node, err error) {
-	log.Trace().Str("method", "GetNode").Uint32("id", id).Msg("method called")
+func (r *registrarGateway) GetNode(id uint64) (node db.Node, err error) {
 	url := fmt.Sprintf("%s/v1/nodes/%d", r.baseURL, id)
+	log.Trace().Str("url", url).Uint64("id", id).Msg("get node")
 
-	resp, err := r.httpClient.Get(url)
-	if err != nil {
-		return
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return
-	}
-
-	if resp.StatusCode == http.StatusNotFound {
-		return node, ErrorRecordNotFound
-	}
-
-	defer resp.Body.Close()
-
-	err = json.NewDecoder(resp.Body).Decode(&node)
-	if err != nil {
-		return
-	}
-
-	return node, err
+	return r.getNode(url)
 }
 
-// support is not added yet
-func (r *registrarGateway) GetNodeByTwinID(twin uint32) (result uint32, err error) {
-	log.Trace().Str("method", "GetNodeByTwinID").Uint32("twin", twin).Msg("method called")
-
+func (r *registrarGateway) GetNodeByTwinID(twin uint64) (result uint64, err error) {
 	url := fmt.Sprintf("%s/v1/nodes", r.baseURL)
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return
-	}
+	log.Trace().Str("url", url).Uint64("twin", twin).Msg("get node by twin_id")
 
-	q := req.URL.Query()
-	q.Add("twin_id", fmt.Sprint(twin))
-	req.URL.RawQuery = q.Encode()
-
-	resp, err := r.httpClient.Do(req)
-	if err != nil {
-		return
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return
-	}
-
-	if resp.StatusCode == http.StatusNotFound {
-		return result, ErrorRecordNotFound
-	}
-
-	defer resp.Body.Close()
-
-	var nodes []gridtypes.Node
-	err = json.NewDecoder(resp.Body).Decode(&nodes)
-	if err != nil {
-		return
-	}
-	if len(nodes) == 0 {
-		return 0, fmt.Errorf("failed to get node with twin id %d", twin)
-	}
-
-	return uint32(nodes[0].NodeID), nil
+	return r.getNodeByTwinID(url, twin)
 }
 
 func (g *registrarGateway) GetNodeContracts(node uint32) ([]types.U64, error) {
@@ -266,32 +165,7 @@ func (r *registrarGateway) GetNodes(farmID uint32) (nodeIDs []uint32, err error)
 	log.Trace().Str("method", "GetNodes").Uint32("farm id", farmID).Msg("method called")
 
 	url := fmt.Sprintf("%s/v1/nodes", r.baseURL)
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return
-	}
-
-	q := req.URL.Query()
-	q.Add("farm_id", fmt.Sprint(farmID))
-	req.URL.RawQuery = q.Encode()
-
-	resp, err := r.httpClient.Do(req)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-
-	var nodes []gridtypes.Node
-	err = json.NewDecoder(resp.Body).Decode(&nodes)
-	if err != nil {
-		return
-	}
-
-	for _, node := range nodes {
-		nodeIDs = append(nodeIDs, uint32(node.NodeID))
-	}
-
-	return nodeIDs, nil
+	return r.getNodesInFarm(url, farmID)
 }
 
 func (g *registrarGateway) GetPowerTarget() (power substrate.NodePower, err error) {
@@ -299,21 +173,19 @@ func (g *registrarGateway) GetPowerTarget() (power substrate.NodePower, err erro
 	return g.sub.GetPowerTarget(uint32(g.nodeID))
 }
 
-func (g *registrarGateway) GetTwin(id uint32) (result substrate.Twin, err error) {
-	log.Trace().Str("method", "GetTwin").Uint32("id", id).Msg("method called")
-	twin, err := g.sub.GetTwin(id)
-	if err != nil {
-		return
-	}
-	return *twin, err
+func (r *registrarGateway) GetTwin(id uint64) (result db.Account, err error) {
+	url := fmt.Sprintf("%s/v1/accounts/%d", r.baseURL, id)
+	log.Trace().Str("url", "url").Uint64("id", id).Msg("get account")
+
+	return r.getTwin(url)
 }
 
-func (g *registrarGateway) GetTwinByPubKey(pk []byte) (result uint32, serr pkg.SubstrateError) {
+func (g *registrarGateway) GetTwinByPubKey(pk []byte) (result uint64, serr pkg.SubstrateError) {
 	log.Trace().Str("method", "GetTwinByPubKey").Str("pk", hex.EncodeToString(pk)).Msg("method called")
 	twinID, err := g.sub.GetTwinByPubKey(pk)
 
 	serr = buildSubstrateError(err)
-	return twinID, serr
+	return uint64(twinID), serr
 }
 
 func (r *registrarGateway) Report(consumptions []substrate.NruConsumption) (types.Hash, error) {
@@ -356,42 +228,26 @@ func (g *registrarGateway) SetNodePowerState(up bool) (hash types.Hash, err erro
 	return g.sub.SetNodePowerState(g.identity, up)
 }
 
-func (r *registrarGateway) UpdateNode(node gridtypes.Node) (uint32, error) {
+func (r *registrarGateway) UpdateNode(node server.NodeRegistrationRequest) (uint64, error) {
+	url := fmt.Sprintf("%s/v1/nodes/%d", r.baseURL, r.nodeID)
 	log.Debug().Str("method", "UpdateNode").Msg("method called")
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	// change this on supporting update node
-	url := fmt.Sprintf("%s/v1/nodes/%d", r.baseURL, node.NodeID)
-
-	var body bytes.Buffer
-	_, err := r.httpClient.Post(url, "application/json", &body)
-	if err != nil {
-		return 0, err
-	}
-
-	return r.GetNodeByTwinID(uint32(node.TwinID))
+	return r.updateNode(node.TwinID, url, node)
 }
 
-func (r *registrarGateway) UpdateNodeUptimeV2(uptime uint64, timestampHint uint64) (hash types.Hash, err error) {
+func (r *registrarGateway) UpdateNodeUptimeV2(uptime uint64, timestampHint uint64) (err error) {
+	url := fmt.Sprintf("%s/v1/nodes/%d/uptime", r.baseURL, r.nodeID)
 	log.Debug().
-		Str("method", "UpdateNodeUptimeV2").
+		Str("url", url).
 		Uint64("uptime", uptime).
 		Uint64("timestamp hint", timestampHint).
-		Msg("method called")
+		Msg("sending uptime report")
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	url := fmt.Sprintf("%s/v1/nodes/%d/uptime", r.baseURL, r.nodeID)
-
-	var body bytes.Buffer
-	_, err = r.httpClient.Post(url, "application/json", &body)
-	if err != nil {
-		return
-	}
-
-	// I need to know what is hash to be able to respond with it
-	return r.sub.UpdateNodeUptimeV2(r.identity, uptime, timestampHint)
+	return r.updateNodeUptimeV2(r.twinID, url, uptime)
 }
 
 func (g *registrarGateway) GetTime() (time.Time, error) {
@@ -453,19 +309,324 @@ func createChallenge(timestamp int64, publicKey string) string {
 	return hex.EncodeToString(hash[:])
 }
 
-func buildRequest(method, url string, bodyVal any) (req *http.Request, err error) {
-	var body io.ReadWriter
-	err = json.NewEncoder(body).Encode(bodyVal)
+func (g *registrarGateway) createTwin(url string, relayURL []string, pk []byte) (uint64, error) {
+	publicKeyBase64 := base64.StdEncoding.EncodeToString(pk)
+	signature := getNodeSignature(pk, g.privKey)
+
+	account := server.AccountCreationRequest{
+		PublicKey: publicKeyBase64,
+		Signature: signature,
+		Timestamp: time.Now().Unix(),
+
+		// need to check how to get this
+		RMBEncKey: "",
+		Relays:    relayURL,
+	}
+
+	var body bytes.Buffer
+	err := json.NewEncoder(&body).Encode(account)
+	if err != nil {
+		return 0, err
+	}
+
+	resp, err := g.httpClient.Post(url, "application/json", &body)
+	if err != nil {
+		return 0, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("failed to create twin with status %s", resp.Status)
+	}
+	defer resp.Body.Close()
+
+	var twinID uint64
+	err = json.NewDecoder(resp.Body).Decode(&twinID)
+
+	return twinID, err
+}
+
+func (g *registrarGateway) ensureAccount(twinID uint64, relay string, pk []byte) (db.Account, error) {
+	twin, err := g.GetTwin(twinID)
+	if err != nil {
+		if !errors.Is(err, ErrorRecordNotFound) {
+			return db.Account{}, err
+		}
+
+		// account not found, create the account
+		twinID, err = g.CreateTwin(relay, pk)
+		if err != nil {
+			return db.Account{}, err
+		}
+
+		twin, err = g.GetTwin(twinID)
+	}
+
+	return twin, err
+}
+
+func (g *registrarGateway) getTwin(url string) (result db.Account, err error) {
+	resp, err := g.httpClient.Get(url)
 	if err != nil {
 		return
 	}
 
-	req, err = http.NewRequest(method, url, body)
+	if resp.StatusCode == http.StatusNotFound {
+		return result, ErrorRecordNotFound
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return result, fmt.Errorf("failed to get twin with status code %s", resp.Status)
+	}
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	return
+}
+
+func (r *registrarGateway) getZosVersion(url string) (string, error) {
+	resp, err := r.httpClient.Get(url)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	var version gridtypes.Versioned
+	err = json.NewDecoder(resp.Body).Decode(&version)
+
+	return version.Version, err
+}
+
+func (r *registrarGateway) createNode(url string, node server.NodeRegistrationRequest) (nodeID uint64, err error) {
+	var body bytes.Buffer
+	err = json.NewEncoder(&body).Encode(node)
 	if err != nil {
 		return
 	}
 
-	req.Header.Add("Content-Type", "application/json")
+	req, err := http.NewRequest("POST", url, &body)
+	if err != nil {
+		return
+	}
+
+	r.authRequest(req, node.TwinID)
+
+	resp, err := r.httpClient.Do(req)
+	if err != nil {
+		return 0, err
+	}
+
+	if resp == nil || resp.StatusCode != http.StatusOK {
+		return 0, errors.New("failed to update node on the registrar")
+	}
+
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&nodeID)
+
+	return nodeID, err
+}
+
+func (r *registrarGateway) getFarm(url string) (farm db.Farm, err error) {
+	resp, err := r.httpClient.Get(url)
+	if err != nil {
+		return
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return farm, ErrorRecordNotFound
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return
+	}
+
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&farm)
+	if err != nil {
+		return
+	}
 
 	return
+}
+
+func (r *registrarGateway) getNode(url string) (node db.Node, err error) {
+	resp, err := r.httpClient.Get(url)
+	if err != nil {
+		return
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return node, ErrorRecordNotFound
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return
+	}
+
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&node)
+	if err != nil {
+		return
+	}
+
+	return node, err
+}
+
+func (r *registrarGateway) getNodeByTwinID(url string, twin uint64) (result uint64, err error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return
+	}
+
+	q := req.URL.Query()
+	q.Add("twin_id", fmt.Sprint(twin))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := r.httpClient.Do(req)
+	if err != nil {
+		return
+	}
+
+	if resp == nil {
+		return result, errors.New("no response received")
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return result, ErrorRecordNotFound
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return result, fmt.Errorf("failed to get node by twin id with status code %s", resp.Status)
+	}
+
+	defer resp.Body.Close()
+
+	var nodes []db.Node
+	err = json.NewDecoder(resp.Body).Decode(&nodes)
+	if err != nil {
+		return
+	}
+	if len(nodes) == 0 {
+		return 0, fmt.Errorf("failed to get node with twin id %d", twin)
+	}
+
+	return nodes[0].NodeID, nil
+}
+
+func (r *registrarGateway) getNodesInFarm(url string, farmID uint32) (nodeIDs []uint32, err error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return
+	}
+
+	q := req.URL.Query()
+	q.Add("farm_id", fmt.Sprint(farmID))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := r.httpClient.Do(req)
+	if err != nil {
+		return
+	}
+
+	if resp == nil || resp.StatusCode != http.StatusOK {
+		return nodeIDs, fmt.Errorf("failed to get node nodes in farm %d", farmID)
+	}
+
+	defer resp.Body.Close()
+
+	var nodes []db.Node
+	err = json.NewDecoder(resp.Body).Decode(&nodes)
+	if err != nil {
+		return
+	}
+
+	for _, node := range nodes {
+		nodeIDs = append(nodeIDs, uint32(node.NodeID))
+	}
+
+	return nodeIDs, nil
+}
+
+func (r *registrarGateway) updateNode(twinID uint64, url string, node server.NodeRegistrationRequest) (uint64, error) {
+	var body bytes.Buffer
+	err := json.NewEncoder(&body).Encode(node)
+	if err != nil {
+		return 0, err
+	}
+
+	req, err := http.NewRequest("PUT", url, &body)
+	if err != nil {
+		return 0, err
+	}
+
+	r.authRequest(req, twinID)
+
+	resp, err := r.httpClient.Do(req)
+	if err != nil {
+		return 0, err
+	}
+
+	if resp == nil || resp.StatusCode != http.StatusOK {
+		return 0, errors.New("failed to update node on the registrar")
+	}
+
+	defer resp.Body.Close()
+
+	var nodeID uint64
+	err = json.NewDecoder(resp.Body).Decode(&nodeID)
+	if err != nil {
+		return 0, err
+	}
+
+	return nodeID, nil
+}
+
+func (r *registrarGateway) updateNodeUptimeV2(twinID uint64, url string, uptime uint64) (err error) {
+	report := server.UptimeReportRequest{Uptime: time.Duration(uptime), Timestamp: time.Now()}
+
+	var body bytes.Buffer
+	err = json.NewEncoder(&body).Encode(report)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", url, &body)
+	if err != nil {
+		return err
+	}
+
+	r.authRequest(req, twinID)
+
+	resp, err := r.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if resp == nil || resp.StatusCode != http.StatusOK {
+		return errors.New("failed to send node up time report")
+	}
+
+	return
+}
+
+func (r *registrarGateway) authRequest(req *http.Request, twinID uint64) {
+	// Create authentication challenge
+	timestamp := time.Now().Unix()
+	challenge := []byte(fmt.Sprintf("%d:%v", timestamp, twinID))
+	signature := ed25519.Sign(r.privKey, challenge)
+	authHeader := fmt.Sprintf(
+		"%s:%s",
+		base64.StdEncoding.EncodeToString(challenge),
+		base64.StdEncoding.EncodeToString(signature),
+	)
+
+	req.Header.Set("X-Auth", authHeader)
+	req.Header.Set("Content-Type", "application/json")
 }

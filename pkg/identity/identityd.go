@@ -7,15 +7,13 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	// substrate "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
-	// substrate "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
+	"github.com/threefoldtech/tfgrid-sdk-go/node-registrar/pkg/db"
 	registrargw "github.com/threefoldtech/zos4/pkg/registrar_gateway"
 	"github.com/threefoldtech/zosbase/pkg/crypto"
-	"github.com/threefoldtech/zosbase/pkg/gridtypes"
 	"github.com/threefoldtech/zosbase/pkg/identity/store"
 
 	"github.com/pkg/errors"
-	"github.com/threefoldtech/zosbase/pkg"
+	"github.com/threefoldtech/zos4/pkg"
 	"github.com/threefoldtech/zosbase/pkg/environment"
 )
 
@@ -114,7 +112,7 @@ func (d *identityManager) Farm() (name string, err error) {
 
 	defer resp.Body.Close()
 
-	var farm gridtypes.Farm
+	var farm db.Farm
 	err = json.NewDecoder(resp.Body).Decode(&farm)
 	if err != nil {
 		return
@@ -124,7 +122,7 @@ func (d *identityManager) Farm() (name string, err error) {
 
 // FarmID returns the farm ID of the node or an error if no farm ID is configured
 func (d *identityManager) FarmID() pkg.FarmID {
-	return d.env.FarmID
+	return pkg.FarmID(d.env.FarmID)
 }
 
 // FarmSecret returns farm secret from kernel params

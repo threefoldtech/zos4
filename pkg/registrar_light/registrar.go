@@ -120,7 +120,7 @@ func (r *Registrar) register(ctx context.Context, cl zbus.Client, env environmen
 				r.setState(FailedState(err))
 				return err
 			} else {
-				r.setState(DoneState(nodeID, twinID))
+				r.setState(DoneState(uint32(nodeID), uint32(twinID)))
 			}
 			return nil
 		}, bo, retryNotify)

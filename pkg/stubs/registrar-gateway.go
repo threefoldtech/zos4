@@ -8,9 +8,10 @@ import (
 	"context"
 	types "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	tfchainclientgo "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
+	db "github.com/threefoldtech/tfgrid-sdk-go/node-registrar/pkg/db"
+	server "github.com/threefoldtech/tfgrid-sdk-go/node-registrar/pkg/server"
 	zbus "github.com/threefoldtech/zbus"
 	pkg "github.com/threefoldtech/zosbase/pkg"
-	gridtypes "github.com/threefoldtech/zosbase/pkg/gridtypes"
 	"time"
 )
 
@@ -31,7 +32,7 @@ func NewRegistrarGatewayStub(client zbus.Client) *RegistrarGatewayStub {
 	}
 }
 
-func (s *RegistrarGatewayStub) CreateNode(ctx context.Context, arg0 gridtypes.Node) (ret0 uint32, ret1 error) {
+func (s *RegistrarGatewayStub) CreateNode(ctx context.Context, arg0 server.NodeRegistrationRequest) (ret0 uint64, ret1 error) {
 	args := []interface{}{arg0}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "CreateNode", args...)
 	if err != nil {
@@ -48,7 +49,7 @@ func (s *RegistrarGatewayStub) CreateNode(ctx context.Context, arg0 gridtypes.No
 	return
 }
 
-func (s *RegistrarGatewayStub) CreateTwin(ctx context.Context, arg0 string, arg1 []uint8) (ret0 uint32, ret1 error) {
+func (s *RegistrarGatewayStub) CreateTwin(ctx context.Context, arg0 string, arg1 []uint8) (ret0 uint64, ret1 error) {
 	args := []interface{}{arg0, arg1}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "CreateTwin", args...)
 	if err != nil {
@@ -65,8 +66,8 @@ func (s *RegistrarGatewayStub) CreateTwin(ctx context.Context, arg0 string, arg1
 	return
 }
 
-func (s *RegistrarGatewayStub) EnsureAccount(ctx context.Context, arg0 []string, arg1 string, arg2 string) (ret0 tfchainclientgo.AccountInfo, ret1 error) {
-	args := []interface{}{arg0, arg1, arg2}
+func (s *RegistrarGatewayStub) EnsureAccount(ctx context.Context, arg0 uint64, arg1 []uint8) (ret0 db.Account, ret1 error) {
+	args := []interface{}{arg0, arg1}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "EnsureAccount", args...)
 	if err != nil {
 		panic(err)
@@ -116,7 +117,7 @@ func (s *RegistrarGatewayStub) GetContractIDByNameRegistration(ctx context.Conte
 	return
 }
 
-func (s *RegistrarGatewayStub) GetFarm(ctx context.Context, arg0 uint32) (ret0 gridtypes.Farm, ret1 error) {
+func (s *RegistrarGatewayStub) GetFarm(ctx context.Context, arg0 uint64) (ret0 db.Farm, ret1 error) {
 	args := []interface{}{arg0}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "GetFarm", args...)
 	if err != nil {
@@ -133,7 +134,7 @@ func (s *RegistrarGatewayStub) GetFarm(ctx context.Context, arg0 uint32) (ret0 g
 	return
 }
 
-func (s *RegistrarGatewayStub) GetNode(ctx context.Context, arg0 uint32) (ret0 gridtypes.Node, ret1 error) {
+func (s *RegistrarGatewayStub) GetNode(ctx context.Context, arg0 uint64) (ret0 db.Node, ret1 error) {
 	args := []interface{}{arg0}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "GetNode", args...)
 	if err != nil {
@@ -150,7 +151,7 @@ func (s *RegistrarGatewayStub) GetNode(ctx context.Context, arg0 uint32) (ret0 g
 	return
 }
 
-func (s *RegistrarGatewayStub) GetNodeByTwinID(ctx context.Context, arg0 uint32) (ret0 uint32, ret1 error) {
+func (s *RegistrarGatewayStub) GetNodeByTwinID(ctx context.Context, arg0 uint64) (ret0 uint64, ret1 error) {
 	args := []interface{}{arg0}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "GetNodeByTwinID", args...)
 	if err != nil {
@@ -252,7 +253,7 @@ func (s *RegistrarGatewayStub) GetTime(ctx context.Context) (ret0 time.Time, ret
 	return
 }
 
-func (s *RegistrarGatewayStub) GetTwin(ctx context.Context, arg0 uint32) (ret0 tfchainclientgo.Twin, ret1 error) {
+func (s *RegistrarGatewayStub) GetTwin(ctx context.Context, arg0 uint64) (ret0 db.Account, ret1 error) {
 	args := []interface{}{arg0}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "GetTwin", args...)
 	if err != nil {
@@ -269,7 +270,7 @@ func (s *RegistrarGatewayStub) GetTwin(ctx context.Context, arg0 uint32) (ret0 t
 	return
 }
 
-func (s *RegistrarGatewayStub) GetTwinByPubKey(ctx context.Context, arg0 []uint8) (ret0 uint32, ret1 pkg.SubstrateError) {
+func (s *RegistrarGatewayStub) GetTwinByPubKey(ctx context.Context, arg0 []uint8) (ret0 uint64, ret1 pkg.SubstrateError) {
 	args := []interface{}{arg0}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "GetTwinByPubKey", args...)
 	if err != nil {
@@ -355,7 +356,7 @@ func (s *RegistrarGatewayStub) SetNodePowerState(ctx context.Context, arg0 bool)
 	return
 }
 
-func (s *RegistrarGatewayStub) UpdateNode(ctx context.Context, arg0 gridtypes.Node) (ret0 uint32, ret1 error) {
+func (s *RegistrarGatewayStub) UpdateNode(ctx context.Context, arg0 server.NodeRegistrationRequest) (ret0 uint64, ret1 error) {
 	args := []interface{}{arg0}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "UpdateNode", args...)
 	if err != nil {
@@ -372,17 +373,15 @@ func (s *RegistrarGatewayStub) UpdateNode(ctx context.Context, arg0 gridtypes.No
 	return
 }
 
-func (s *RegistrarGatewayStub) UpdateNodeUptimeV2(ctx context.Context, arg0 uint64, arg1 uint64) (ret0 types.Hash, ret1 error) {
+func (s *RegistrarGatewayStub) UpdateNodeUptimeV2(ctx context.Context, arg0 uint64, arg1 uint64) (ret0 error) {
 	args := []interface{}{arg0, arg1}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "UpdateNodeUptimeV2", args...)
 	if err != nil {
 		panic(err)
 	}
 	result.PanicOnError()
-	ret1 = result.CallError()
-	loader := zbus.Loader{
-		&ret0,
-	}
+	ret0 = result.CallError()
+	loader := zbus.Loader{}
 	if err := result.Unmarshal(&loader); err != nil {
 		panic(err)
 	}
