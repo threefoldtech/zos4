@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 	substrate "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
 	"github.com/threefoldtech/zbus"
+	zos4stub "github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/environment"
 	"github.com/threefoldtech/zosbase/pkg/events"
 	"github.com/threefoldtech/zosbase/pkg/power"
@@ -58,7 +59,7 @@ func action(cli *cli.Context) error {
 		log.Info().Err(zuiErr).Send()
 	}
 
-	identity := stubs.NewIdentityManagerStub(cl)
+	identity := zos4stub.NewIdentityManagerStub(cl)
 	register := stubs.NewRegistrarStub(cl)
 
 	nodeID, err := register.NodeID(ctx)

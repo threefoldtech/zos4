@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/app"
-	"github.com/threefoldtech/zosbase/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/upgrade"
 
+	"github.com/threefoldtech/zos4/pkg"
 	"github.com/threefoldtech/zos4/pkg/identity"
-	"github.com/threefoldtech/zosbase/pkg"
 	"github.com/threefoldtech/zosbase/pkg/environment"
 
 	"github.com/rs/zerolog/log"

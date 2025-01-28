@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	substrate "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
 	"github.com/threefoldtech/zbus"
+	zos4stubs "github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg"
 	gridtypes "github.com/threefoldtech/zosbase/pkg/gridtypes"
 	"github.com/threefoldtech/zosbase/pkg/rrd"
@@ -57,7 +58,7 @@ func ReportChecks(metricsPath string) error {
 
 // NewReporter creates a new capacity reporter
 func NewReporter(metricsPath string, cl zbus.Client, root string) (*Reporter, error) {
-	idMgr := stubs.NewIdentityManagerStub(cl)
+	idMgr := zos4stubs.NewIdentityManagerStub(cl)
 	sk := ed25519.PrivateKey(idMgr.PrivateKey(context.TODO()))
 	id, err := substrate.NewIdentityFromEd25519Key(sk)
 	if err != nil {
