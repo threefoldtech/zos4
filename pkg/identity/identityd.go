@@ -8,19 +8,20 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/threefoldtech/tfgrid-sdk-go/node-registrar/pkg/db"
-	"github.com/threefoldtech/zos4/pkg/identity/store"
 	registrargw "github.com/threefoldtech/zos4/pkg/registrar_gateway"
 	"github.com/threefoldtech/zosbase/pkg/crypto"
+	"github.com/threefoldtech/zosbase/pkg/identity/store"
 
 	"github.com/pkg/errors"
 	zos4pkg "github.com/threefoldtech/zos4/pkg"
 	"github.com/threefoldtech/zosbase/pkg"
 	"github.com/threefoldtech/zosbase/pkg/environment"
+	"github.com/threefoldtech/zosbase/pkg/identity"
 )
 
 type identityManager struct {
 	kind string
-	key  KeyPair
+	key  identity.KeyPair
 	env  environment.Environment
 
 	farm string
@@ -34,15 +35,15 @@ type identityManager struct {
 // to tpm are not deleted from disks. This allow switching back and forth between tpm
 // and non-tpm key stores.
 func NewManager(root string, debug bool) (zos4pkg.IdentityManager, error) {
-	st, err := NewStore(root, !debug)
+	st, err := identity.NewStore(root, !debug)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create key store")
 	}
 	log.Info().Str("kind", st.Kind()).Msg("key store loaded")
 	key, err := st.Get()
-	var pair KeyPair
+	var pair identity.KeyPair
 	if errors.Is(err, store.ErrKeyDoesNotExist) {
-		pair, err = GenerateKeyPair()
+		pair, err = identity.GenerateKeyPair()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to generate key pair")
 		}
@@ -56,7 +57,7 @@ func NewManager(root string, debug bool) (zos4pkg.IdentityManager, error) {
 		}
 		return nil, errors.Wrap(err, "failed to load seed")
 	} else {
-		pair = KeyPairFromKey(key)
+		pair = identity.KeyPairFromKey(key)
 	}
 
 	env, err := environment.Get()

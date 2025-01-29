@@ -14,6 +14,7 @@ import (
 	"github.com/threefoldtech/zosbase/pkg"
 	"github.com/threefoldtech/zosbase/pkg/events"
 	"github.com/threefoldtech/zosbase/pkg/network/bridge"
+	"github.com/threefoldtech/zosbase/pkg/power"
 	"github.com/threefoldtech/zosbase/pkg/zinit"
 )
 
@@ -78,21 +79,21 @@ func EnsureWakeOnLan(ctx context.Context) (bool, error) {
 
 	nic := filtered[0].Attrs().Name
 	log.Info().Str("nic", nic).Msg("enabling wol on interface")
-	support, err := ValueOfFlag(ctx, nic, SupportsWakeOn)
+	support, err := power.ValueOfFlag(ctx, nic, power.SupportsWakeOn)
 
-	if errors.Is(err, ErrFlagNotFound) {
+	if errors.Is(err, power.ErrFlagNotFound) {
 		// no support for
 		return false, nil
 	} else if err != nil {
 		return false, errors.Wrap(err, "failed to detect support for wake on lan")
 	}
 
-	if !strings.Contains(support, string(MagicPacket)) {
+	if !strings.Contains(support, string(power.MagicPacket)) {
 		// no magic packet support either
 		return false, nil
 	}
 
-	return true, SetWol(ctx, nic, MagicPacket)
+	return true, power.SetWol(ctx, nic, power.MagicPacket)
 }
 
 func (p *PowerServer) syncSelf() error {

@@ -11,16 +11,16 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/threefoldtech/zos4/pkg"
-	"github.com/threefoldtech/zos4/pkg/primitives"
-	"github.com/threefoldtech/zos4/pkg/provision/storage"
-	fsStorage "github.com/threefoldtech/zos4/pkg/provision/storage.fs"
+	"github.com/threefoldtech/zosbase/pkg"
 	"github.com/threefoldtech/zosbase/pkg/app"
 	"github.com/threefoldtech/zosbase/pkg/capacity"
 	"github.com/threefoldtech/zosbase/pkg/environment"
 	"github.com/threefoldtech/zosbase/pkg/events"
 	"github.com/threefoldtech/zosbase/pkg/gridtypes"
 	"github.com/threefoldtech/zosbase/pkg/gridtypes/zos"
+	"github.com/threefoldtech/zosbase/pkg/primitives"
+	"github.com/threefoldtech/zosbase/pkg/provision/storage"
+	fsStorage "github.com/threefoldtech/zosbase/pkg/provision/storage.fs"
 
 	"github.com/urfave/cli/v2"
 

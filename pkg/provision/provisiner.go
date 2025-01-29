@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/threefoldtech/zosbase/pkg/gridtypes"
+	"github.com/threefoldtech/zosbase/pkg/provision"
 )
 
 // Response interface for custom error responses
@@ -97,7 +98,7 @@ type mapProvisioner struct {
 }
 
 // NewMapProvisioner returns a new instance of a map provisioner
-func NewMapProvisioner(managers map[gridtypes.WorkloadType]Manager) Provisioner {
+func NewMapProvisioner(managers map[gridtypes.WorkloadType]Manager) provision.Provisioner {
 	return &mapProvisioner{
 		managers: managers,
 	}
@@ -126,7 +127,7 @@ func (p *mapProvisioner) Provision(ctx context.Context, wl *gridtypes.WorkloadWi
 	}
 
 	data, err := manager.Provision(ctx, wl)
-	if errors.Is(err, ErrNoActionNeeded) {
+	if errors.Is(err, provision.ErrNoActionNeeded) {
 		return result, err
 	}
 
@@ -209,7 +210,7 @@ func (p *mapProvisioner) Update(ctx context.Context, wl *gridtypes.WorkloadWithI
 	}
 
 	data, err := updater.Update(ctx, wl)
-	if errors.Is(err, ErrNoActionNeeded) {
+	if errors.Is(err, provision.ErrNoActionNeeded) {
 		return result, err
 	}
 

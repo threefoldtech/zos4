@@ -18,12 +18,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	substrate "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
-	zos4pkg "github.com/threefoldtech/zos4/pkg"
 	"github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg"
 	"github.com/threefoldtech/zosbase/pkg/environment"
 	"github.com/threefoldtech/zosbase/pkg/gridtypes"
 	"github.com/threefoldtech/zosbase/pkg/gridtypes/zos"
+	"github.com/threefoldtech/zosbase/pkg/provision"
 )
 
 // EngineOption interface
@@ -33,13 +33,13 @@ type EngineOption interface {
 
 // WithTwins sets the user key getter on the
 // engine
-func WithTwins(g Twins) EngineOption {
+func WithTwins(g provision.Twins) EngineOption {
 	return &withUserKeyGetter{g}
 }
 
 // WithAdmins sets the admins key getter on the
 // engine
-func WithAdmins(g Twins) EngineOption {
+func WithAdmins(g provision.Twins) EngineOption {
 	return &withAdminsKeyGetter{g}
 }
 
@@ -112,15 +112,15 @@ type engineJob struct {
 // NativeEngine is the core of this package
 // The engine is responsible to manage provision and decomission of workloads on the system
 type NativeEngine struct {
-	storage     Storage
-	provisioner Provisioner
+	storage     provision.Storage
+	provisioner provision.Provisioner
 
 	queue *dque.DQue
 
 	// options
 	// janitor Janitor
-	twins     Twins
-	admins    Twins
+	twins     provision.Twins
+	admins    provision.Twins
 	order     []gridtypes.WorkloadType
 	typeIndex map[gridtypes.WorkloadType]int
 	rerunAll  bool
@@ -131,12 +131,12 @@ type NativeEngine struct {
 }
 
 var (
-	_ Engine            = (*NativeEngine)(nil)
-	_ zos4pkg.Provision = (*NativeEngine)(nil)
+	_ provision.Engine = (*NativeEngine)(nil)
+	_ pkg.Provision    = (*NativeEngine)(nil)
 )
 
 type withUserKeyGetter struct {
-	g Twins
+	g provision.Twins
 }
 
 func (o *withUserKeyGetter) apply(e *NativeEngine) {
@@ -144,7 +144,7 @@ func (o *withUserKeyGetter) apply(e *NativeEngine) {
 }
 
 type withAdminsKeyGetter struct {
-	g Twins
+	g provision.Twins
 }
 
 func (o *withAdminsKeyGetter) apply(e *NativeEngine) {
@@ -225,8 +225,8 @@ type (
 )
 
 // GetEngine gets engine from context
-func GetEngine(ctx context.Context) Engine {
-	return ctx.Value(engineKey{}).(Engine)
+func GetEngine(ctx context.Context) provision.Engine {
+	return ctx.Value(engineKey{}).(provision.Engine)
 }
 
 // GetDeploymentID gets twin and deployment ID for current deployment
@@ -301,7 +301,7 @@ func withRented(ctx context.Context, rent bool) context.Context {
 // the default implementation is a single threaded worker. so it process
 // one reservation at a time. On error, the engine will log the error. and
 // continue to next reservation.
-func New(storage Storage, provisioner Provisioner, root string, opts ...EngineOption) (*NativeEngine, error) {
+func New(storage provision.Storage, provisioner provision.Provisioner, root string, opts ...EngineOption) (*NativeEngine, error) {
 	e := &NativeEngine{
 		storage:     storage,
 		provisioner: provisioner,
@@ -332,24 +332,24 @@ func New(storage Storage, provisioner Provisioner, root string, opts ...EngineOp
 }
 
 // Storage returns
-func (e *NativeEngine) Storage() Storage {
+func (e *NativeEngine) Storage() provision.Storage {
 	return e.storage
 }
 
 // Twins returns twins db
-func (e *NativeEngine) Twins() Twins {
+func (e *NativeEngine) Twins() provision.Twins {
 	return e.twins
 }
 
 // Admins returns admins db
-func (e *NativeEngine) Admins() Twins {
+func (e *NativeEngine) Admins() provision.Twins {
 	return e.admins
 }
 
 // Provision workload
 func (e *NativeEngine) Provision(ctx context.Context, deployment gridtypes.Deployment) error {
 	if deployment.Version != 0 {
-		return errors.Wrap(ErrInvalidVersion, "expected version to be 0 on deployment creation")
+		return errors.Wrap(provision.ErrInvalidVersion, "expected version to be 0 on deployment creation")
 	}
 
 	if err := e.storage.Create(deployment); err != nil {
@@ -438,14 +438,14 @@ func (e *NativeEngine) Update(ctx context.Context, update gridtypes.Deployment) 
 	// that this update is acceptable.
 	upgrades, err := deployment.Upgrade(&update)
 	if err != nil {
-		return errors.Wrap(ErrDeploymentUpgradeValidationError, err.Error())
+		return errors.Wrap(provision.ErrDeploymentUpgradeValidationError, err.Error())
 	}
 
 	for _, op := range upgrades {
 		if op.Op == gridtypes.OpUpdate {
 			if !e.provisioner.CanUpdate(ctx, op.WlID.Type) {
 				return errors.Wrapf(
-					ErrDeploymentUpgradeValidationError,
+					provision.ErrDeploymentUpgradeValidationError,
 					"workload '%s' does not support upgrade",
 					op.WlID.Type.String())
 			}
@@ -453,16 +453,16 @@ func (e *NativeEngine) Update(ctx context.Context, update gridtypes.Deployment) 
 	}
 
 	// fields to update in storage
-	fields := []Field{
-		VersionField{update.Version},
-		SignatureRequirementField{update.SignatureRequirement},
+	fields := []provision.Field{
+		provision.VersionField{Version: update.Version},
+		provision.SignatureRequirementField{SignatureRequirement: update.SignatureRequirement},
 	}
 
 	if deployment.Description != update.Description {
-		fields = append(fields, DescriptionField{update.Description})
+		fields = append(fields, provision.DescriptionField{Description: update.Description})
 	}
 	if deployment.Metadata != update.Metadata {
-		fields = append(fields, MetadataField{update.Metadata})
+		fields = append(fields, provision.MetadataField{Metadata: update.Metadata})
 	}
 	// update deployment fields, workloads will then can get updated separately
 	if err := e.storage.Update(update.TwinID, update.ContractID, fields...); err != nil {
@@ -681,7 +681,7 @@ func (e *NativeEngine) uninstallWorkload(ctx context.Context, wl *gridtypes.Work
 		Logger()
 
 	_, err := e.storage.Current(twin, deployment, name)
-	if errors.Is(err, ErrWorkloadNotExist) {
+	if errors.Is(err, provision.ErrWorkloadNotExist) {
 		return nil
 	} else if err != nil {
 		return err
@@ -718,7 +718,7 @@ func (e *NativeEngine) installWorkload(ctx context.Context, wl *gridtypes.Worklo
 	twin, deployment, name, _ := wl.ID.Parts()
 
 	current, err := e.storage.Current(twin, deployment, name)
-	if errors.Is(err, ErrWorkloadNotExist) {
+	if errors.Is(err, provision.ErrWorkloadNotExist) {
 		// this can happen if installWorkload was called upon a deployment update operation
 		// so this is a totally new workload that was not part of the original deployment
 		// hence a call to Add is needed
@@ -748,7 +748,7 @@ func (e *NativeEngine) installWorkload(ctx context.Context, wl *gridtypes.Worklo
 
 	log.Debug().Msg("provisioning")
 	result, err := e.provisioner.Provision(ctx, wl)
-	if errors.Is(err, ErrNoActionNeeded) {
+	if errors.Is(err, provision.ErrNoActionNeeded) {
 		// workload already exist, so no need to create a new transaction
 		return nil
 	} else if err != nil {
@@ -789,7 +789,7 @@ func (e *NativeEngine) updateWorkload(ctx context.Context, wl *gridtypes.Workloa
 		err = fmt.Errorf("can not update this workload type")
 	}
 
-	if errors.Is(err, ErrNoActionNeeded) {
+	if errors.Is(err, provision.ErrNoActionNeeded) {
 		currentWl, err := e.storage.Current(twin, deployment, name)
 		if err != nil {
 			return err
@@ -832,7 +832,7 @@ func (e *NativeEngine) lockWorkload(ctx context.Context, wl *gridtypes.WorkloadW
 		action = e.provisioner.Pause
 	}
 	result, err := action(ctx, wl)
-	if errors.Is(err, ErrNoActionNeeded) {
+	if errors.Is(err, provision.ErrNoActionNeeded) {
 		// workload already exist, so no need to create a new transaction
 		return nil
 	} else if err != nil {
@@ -1061,7 +1061,7 @@ func (n *NativeEngine) CreateOrUpdate(twin uint32, deployment gridtypes.Deployme
 
 func (n *NativeEngine) Get(twin uint32, contractID uint64) (gridtypes.Deployment, error) {
 	deployment, err := n.storage.Get(twin, contractID)
-	if errors.Is(err, ErrDeploymentNotExists) {
+	if errors.Is(err, provision.ErrDeploymentNotExists) {
 		return gridtypes.Deployment{}, fmt.Errorf("deployment not found")
 	} else if err != nil {
 		return gridtypes.Deployment{}, err
@@ -1091,7 +1091,7 @@ func (n *NativeEngine) List(twin uint32) ([]gridtypes.Deployment, error) {
 
 func (n *NativeEngine) Changes(twin uint32, contractID uint64) ([]gridtypes.Workload, error) {
 	changes, err := n.storage.Changes(twin, contractID)
-	if errors.Is(err, ErrDeploymentNotExists) {
+	if errors.Is(err, provision.ErrDeploymentNotExists) {
 		return nil, fmt.Errorf("deployment not found")
 	} else if err != nil {
 		return nil, err
@@ -1170,7 +1170,7 @@ func (n *NativeEngine) ListPrivateIPs(twin uint32, network gridtypes.Name) ([]st
 }
 
 func isNotFoundError(err error) bool {
-	if errors.Is(err, ErrWorkloadNotExist) || errors.Is(err, ErrDeploymentNotExists) {
+	if errors.Is(err, provision.ErrWorkloadNotExist) || errors.Is(err, provision.ErrDeploymentNotExists) {
 		return true
 	}
 	return false

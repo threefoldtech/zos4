@@ -6,10 +6,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
-	provision "github.com/threefoldtech/zos4/pkg/provision"
 	"github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/events"
-	gridtypes "github.com/threefoldtech/zosbase/pkg/gridtypes"
+	"github.com/threefoldtech/zosbase/pkg/gridtypes"
+	"github.com/threefoldtech/zosbase/pkg/provision"
 )
 
 type ContractEventHandler struct {

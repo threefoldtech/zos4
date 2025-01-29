@@ -9,6 +9,7 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/pkg/errors"
 	"github.com/threefoldtech/zos4/pkg/stubs"
+	"github.com/threefoldtech/zosbase/pkg/provision"
 )
 
 type registrarTwins struct {
@@ -17,7 +18,7 @@ type registrarTwins struct {
 }
 
 // NewRegistrarTwins creates a users db that implements the provision.Users interface.
-func NewRegistrarTwins(registrarGateway *stubs.RegistrarGatewayStub) (Twins, error) {
+func NewRegistrarTwins(registrarGateway *stubs.RegistrarGatewayStub) (provision.Twins, error) {
 	cache, err := lru.New(1024)
 	if err != nil {
 		return nil, err
@@ -55,7 +56,7 @@ type registrarAdmins struct {
 
 // NewRegistrarAdmins creates a twins db that implements the provision.Users interface.
 // but it also make sure the user is an admin
-func NewRegistrarAdmins(registrarGateway *stubs.RegistrarGatewayStub, farmID uint64) (Twins, error) {
+func NewRegistrarAdmins(registrarGateway *stubs.RegistrarGatewayStub, farmID uint64) (provision.Twins, error) {
 	farm, err := registrarGateway.GetFarm(context.Background(), farmID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get farm")
