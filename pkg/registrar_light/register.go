@@ -10,11 +10,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
-	"github.com/threefoldtech/tfgrid-sdk-go/node-registrar/pkg/db"
-	"github.com/threefoldtech/tfgrid-sdk-go/node-registrar/pkg/server"
 	"github.com/threefoldtech/zbus"
 	registrargw "github.com/threefoldtech/zos4/pkg/registrar_gateway"
 	zos4Stubs "github.com/threefoldtech/zos4/pkg/stubs"
+	"github.com/threefoldtech/zos4/pkg/types"
 	"github.com/threefoldtech/zosbase/pkg/environment"
 	"github.com/threefoldtech/zosbase/pkg/geoip"
 	gridtypes "github.com/threefoldtech/zosbase/pkg/gridtypes"
@@ -112,7 +111,7 @@ func registerNode(
 		return 0, 0, errors.Wrap(err, "failed to get zos bridge information")
 	}
 
-	interfaces := db.Interface{
+	interfaces := types.Interface{
 		Name: infs.Interfaces["zos"].Name,
 		Mac:  infs.Interfaces["zos"].Mac,
 		IPs: func() string {
@@ -124,14 +123,14 @@ func registerNode(
 		}(),
 	}
 
-	resources := db.Resources{
+	resources := types.Resources{
 		HRU: uint64(info.Capacity.HRU),
 		SRU: uint64(info.Capacity.SRU),
 		CRU: info.Capacity.CRU,
 		MRU: uint64(info.Capacity.MRU),
 	}
 
-	location := db.Location{
+	location := types.Location{
 		Longitude: fmt.Sprint(info.Location.Longitude),
 		Latitude:  fmt.Sprint(info.Location.Latitude),
 		Country:   info.Location.Country,
@@ -158,17 +157,17 @@ func registerNode(
 	// 	serial = gridtypes.OptionBoardSerial{HasValue: true, AsValue: info.SerialNumber}
 	// }
 
-	real := db.Node{
+	real := types.Node{
 		FarmID:      uint64(env.FarmID),
 		TwinID:      twinID,
 		Resources:   resources,
 		Location:    location,
-		Interfaces:  []db.Interface{interfaces},
+		Interfaces:  []types.Interface{interfaces},
 		SecureBoot:  info.SecureBoot,
 		Virtualized: info.Virtualized,
 	}
 
-	req := server.NodeRegistrationRequest{
+	req := types.NodeRegistrationRequest{
 		FarmID:      real.FarmID,
 		TwinID:      real.TwinID,
 		Resources:   real.Resources,
@@ -192,7 +191,7 @@ func registerNode(
 	}
 
 	// node exists
-	var onChain db.Node
+	var onChain types.Node
 	onChain, err = registrarGateway.GetNode(ctx, nodeID)
 	if err != nil {
 		return 0, 0, errors.Wrapf(err, "failed to get node with id: %d", nodeID)

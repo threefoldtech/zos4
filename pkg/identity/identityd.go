@@ -7,8 +7,8 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/threefoldtech/tfgrid-sdk-go/node-registrar/pkg/db"
 	registrargw "github.com/threefoldtech/zos4/pkg/registrar_gateway"
+	"github.com/threefoldtech/zos4/pkg/types"
 	"github.com/threefoldtech/zosbase/pkg/crypto"
 	"github.com/threefoldtech/zosbase/pkg/identity/store"
 
@@ -114,7 +114,7 @@ func (d *identityManager) Farm() (name string, err error) {
 
 	defer resp.Body.Close()
 
-	var farm db.Farm
+	var farm types.Farm
 	err = json.NewDecoder(resp.Body).Decode(&farm)
 	if err != nil {
 		return
