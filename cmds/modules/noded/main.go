@@ -10,6 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	registrar "github.com/threefoldtech/zos4/pkg/registrar_light"
+	zos4stubs "github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/app"
 	"github.com/threefoldtech/zosbase/pkg/capacity"
 	"github.com/threefoldtech/zosbase/pkg/environment"
@@ -182,7 +183,7 @@ func action(cli *cli.Context) error {
 			time.Sleep(time.Minute * 5)
 		}
 	}
-	registrar := stubs.NewRegistrarStub(redis)
+	registrar := zos4stubs.NewRegistrarStub(redis)
 	var twin, node uint32
 	exp := backoff.NewExponentialBackOff()
 	exp.MaxInterval = 2 * time.Minute

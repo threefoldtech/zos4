@@ -8,12 +8,11 @@ import (
 
 	"github.com/cenkalti/backoff/v3"
 	"github.com/rs/zerolog/log"
-	substrate "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
 	"github.com/threefoldtech/tfgrid-sdk-go/rmb-sdk-go/peer"
 	"github.com/threefoldtech/zbus"
+	registrar "github.com/threefoldtech/zos4/pkg/registrar_gateway"
 	"github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/environment"
-	substrategw "github.com/threefoldtech/zosbase/pkg/substrate_gateway"
 	"github.com/threefoldtech/zosbase/pkg/utils"
 	zosapi "github.com/threefoldtech/zosbase/pkg/zos_api_light"
 	"github.com/urfave/cli/v2"
@@ -57,8 +56,9 @@ func action(cli *cli.Context) error {
 	idStub := stubs.NewIdentityManagerStub(redis)
 
 	sk := ed25519.PrivateKey(idStub.PrivateKey(cli.Context))
-	id, err := substrate.NewIdentityFromEd25519Key(sk)
-	log.Info().Str("public key", string(id.PublicKey())).Msg("node public key")
+	pubKey := sk.Public().(ed25519.PrivateKey)
+
+	log.Info().Str("public key", string(pubKey)).Msg("node public key")
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func action(cli *cli.Context) error {
 	}
 
 	router := peer.NewRouter()
-	gw, err := substrategw.NewSubstrateGateway(manager, id)
+	gw, err := registrar.NewRegistrarGateway(redis, manager)
 	if err != nil {
 		return fmt.Errorf("failed to create api gateway: %w", err)
 	}
@@ -98,17 +98,17 @@ func action(cli *cli.Context) error {
 	}
 	api.SetupRoutes(router)
 
-	pair, err := id.KeyPair()
-	if err != nil {
-		return err
-	}
+	// pair, err := id.KeyPair()
+	// if err != nil {
+	// 	return err
+	// }
 
 	bo := backoff.NewExponentialBackOff()
 	bo.MaxElapsedTime = 0
 	backoff.Retry(func() error {
 		_, err = peer.NewPeer(
 			ctx,
-			hex.EncodeToString(pair.Seed()),
+			hex.EncodeToString(sk.Seed()),
 			manager,
 			router.Serve,
 			peer.WithKeyType(peer.KeyTypeEd25519),

@@ -36,7 +36,7 @@ type Reporter struct {
 
 	identity         substrate.Identity
 	queue            *dque.DQue
-	substrateGateway *stubs.SubstrateGatewayStub
+	substrateGateway *zos4stubs.RegistrarGatewayStub
 }
 
 func reportBuilder() interface{} {
@@ -80,7 +80,7 @@ func NewReporter(metricsPath string, cl zbus.Client, root string) (*Reporter, er
 		return nil, errors.Wrap(err, "failed to setup report persisted queue")
 	}
 
-	substrateGateway := stubs.NewSubstrateGatewayStub(cl)
+	substrateGateway := zos4stubs.NewRegistrarGatewayStub(cl)
 
 	rrd, err := rrd.NewRRDBolt(metricsPath, 5*time.Minute, 24*time.Hour)
 	if err != nil {

@@ -16,11 +16,9 @@ import (
 	"github.com/threefoldtech/zosbase/pkg/kernel"
 )
 
-var (
-	mainNetFarms = []pkg.FarmID{
-		1, 79, 77, 76, 3997,
-	}
-)
+var mainNetFarms = []pkg.FarmID{
+	1, 79, 77, 76, 3997,
+}
 
 func manageSSHKeys() error {
 	extraUser, addUser := kernel.GetParams().GetOne("ssh-user")
@@ -41,7 +39,7 @@ func manageSSHKeys() error {
 
 	if env.RunningMode == environment.RunningMain {
 		// we don't support adding the user passed as ssh-user on mainnet
-		addUser = false
+		// addUser = false
 	}
 
 	// if we are in mainnet but one of the managed farms we will use the user list from testnet
@@ -73,7 +71,6 @@ func manageSSHKeys() error {
 	for _, user := range authorizedUsers {
 		fetchKey := func() error {
 			res, err := http.Get(fmt.Sprintf("https://github.com/%s.keys", user))
-
 			if err != nil {
 				return fmt.Errorf("failed to fetch user keys: %+w", err)
 			}

@@ -11,17 +11,16 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	substrate "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
-	"github.com/threefoldtech/zosbase/pkg"
+	"github.com/threefoldtech/zos4/pkg"
+	"github.com/threefoldtech/zos4/pkg/primitives"
+	"github.com/threefoldtech/zos4/pkg/provision/storage"
+	fsStorage "github.com/threefoldtech/zos4/pkg/provision/storage.fs"
 	"github.com/threefoldtech/zosbase/pkg/app"
 	"github.com/threefoldtech/zosbase/pkg/capacity"
 	"github.com/threefoldtech/zosbase/pkg/environment"
 	"github.com/threefoldtech/zosbase/pkg/events"
-	gridtypes "github.com/threefoldtech/zosbase/pkg/gridtypes"
+	"github.com/threefoldtech/zosbase/pkg/gridtypes"
 	"github.com/threefoldtech/zosbase/pkg/gridtypes/zos"
-	"github.com/threefoldtech/zosbase/pkg/primitives"
-	"github.com/threefoldtech/zosbase/pkg/provision/storage"
-	fsStorage "github.com/threefoldtech/zosbase/pkg/provision/storage.fs"
 
 	"github.com/urfave/cli/v2"
 
@@ -32,7 +31,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/threefoldtech/zbus"
-	provision "github.com/threefoldtech/zosbase/pkg/provision"
+	provision "github.com/threefoldtech/zos4/pkg/provision"
 )
 
 const (
@@ -249,30 +248,30 @@ func action(cli *cli.Context) error {
 		provisioners,
 	)
 
-	substrateGateway := stubs.NewSubstrateGatewayStub(cl)
-	users, err := provision.NewSubstrateTwins(substrateGateway)
+	registrarGateway := zos4stubs.NewRegistrarGatewayStub(cl)
+	users, err := provision.NewRegistrarTwins(registrarGateway)
 	if err != nil {
 		return errors.Wrap(err, "failed to create substrate users database")
 	}
 
-	admins, err := provision.NewSubstrateAdmins(substrateGateway, uint32(env.FarmID))
+	admins, err := provision.NewRegistrarAdmins(registrarGateway, uint64(env.FarmID))
 	if err != nil {
 		return errors.Wrap(err, "failed to create substrate admins database")
 	}
 
-	kp, err := substrate.NewIdentityFromEd25519Key(sk)
+	pubKey, ok := sk.Public().(ed25519.PublicKey)
+	if !ok {
+		return errors.Wrap(err, "failed to get public key of secure key")
+	}
+
+	twin, err := registrarGateway.GetTwinByPubKey(ctx, pubKey)
 	if err != nil {
-		return errors.Wrap(err, "failed to get substrate keypair from secure key")
+		return errors.Wrap(err, "failed to get node twin id")
 	}
 
-	twin, subErr := substrateGateway.GetTwinByPubKey(ctx, kp.PublicKey())
-	if subErr.IsError() {
-		return errors.Wrap(subErr.Err, "failed to get node twin id")
-	}
-
-	node, subErr := substrateGateway.GetNodeByTwinID(ctx, twin)
-	if subErr.IsError() {
-		return errors.Wrap(subErr.Err, "failed to get node from twin")
+	node, err := registrarGateway.GetNodeByTwinID(ctx, twin)
+	if err != nil {
+		return errors.Wrap(err, "failed to get node from twin")
 	}
 
 	queues := filepath.Join(rootDir, "queues")
@@ -280,7 +279,7 @@ func action(cli *cli.Context) error {
 		return errors.Wrap(err, "failed to create storage for queues")
 	}
 
-	setter := NewCapacitySetter(substrateGateway, store)
+	setter := NewCapacitySetter(registrarGateway, store)
 
 	log.Info().Int("contracts", len(active)).Msg("setting used capacity by contracts")
 	if err := setter.Set(active...); err != nil {
@@ -301,7 +300,7 @@ func action(cli *cli.Context) error {
 		queues,
 		provision.WithTwins(users),
 		provision.WithAdmins(admins),
-		provision.WithAPIGateway(node, substrateGateway),
+		provision.WithAPIGateway(node, registrarGateway),
 		// set priority to some reservation types on boot
 		// so we always need to make sure all volumes and networks
 		// comes first.
@@ -334,7 +333,7 @@ func action(cli *cli.Context) error {
 
 	server.Register(
 		zbus.ObjectID{Name: statisticsModule, Version: "0.0.1"},
-		pkg.Statistics(primitives.NewStatisticsStream(statistics)),
+		primitives.NewStatisticsStream(statistics),
 	)
 
 	log.Info().
@@ -362,7 +361,7 @@ func action(cli *cli.Context) error {
 		return errors.Wrap(err, "failed to create event consumer")
 	}
 
-	handler := NewContractEventHandler(node, substrateGateway, engine, consumer)
+	handler := NewContractEventHandler(node, registrarGateway, engine, consumer)
 
 	go func() {
 		if err := handler.Run(ctx); err != nil && err != context.Canceled {

@@ -2,6 +2,7 @@ package registrar
 
 import (
 	"context"
+	"crypto/ed25519"
 	"os"
 	"sync"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/zbus"
+	zos4stubs "github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/app"
 	"github.com/threefoldtech/zosbase/pkg/environment"
 	"github.com/threefoldtech/zosbase/pkg/stubs"
@@ -144,7 +146,7 @@ func (r *Registrar) register(ctx context.Context, cl zbus.Client, env environmen
 		select {
 		case <-ctx.Done():
 		case <-time.After(monitorAccountEvery):
-			if err := r.reActivate(ctx, cl, env); err != nil {
+			if err := r.reActivate(ctx, cl); err != nil {
 				log.Error().Err(err).Msg("failed to reactivate account")
 			}
 		case <-time.After(updateNodeInfoInterval):
@@ -157,10 +159,18 @@ func (r *Registrar) register(ctx context.Context, cl zbus.Client, env environmen
 	}
 }
 
-func (r *Registrar) reActivate(ctx context.Context, cl zbus.Client, env environment.Environment) error {
-	substrateGateway := stubs.NewSubstrateGatewayStub(cl)
+func (r *Registrar) reActivate(ctx context.Context, cl zbus.Client) error {
+	registrarGateway := zos4stubs.NewRegistrarGatewayStub(cl)
+	identityManager := zos4stubs.NewIdentityManagerStub(cl)
 
-	_, err := substrateGateway.EnsureAccount(ctx, env.ActivationURL, tcUrl, tcHash)
+	sk := ed25519.PrivateKey(identityManager.PrivateKey(ctx))
+	pubKey := sk.Public().(ed25519.PrivateKey)
+
+	twinID, err := r.TwinID()
+	if err != nil {
+		return err
+	}
+	_, err = registrarGateway.EnsureAccount(ctx, uint64(twinID), pubKey)
 
 	return err
 }

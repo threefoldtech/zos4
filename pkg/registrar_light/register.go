@@ -15,16 +15,10 @@ import (
 	"github.com/threefoldtech/zbus"
 	registrargw "github.com/threefoldtech/zos4/pkg/registrar_gateway"
 	zos4Stubs "github.com/threefoldtech/zos4/pkg/stubs"
-	"github.com/threefoldtech/zosbase/pkg"
 	"github.com/threefoldtech/zosbase/pkg/environment"
 	"github.com/threefoldtech/zosbase/pkg/geoip"
 	gridtypes "github.com/threefoldtech/zosbase/pkg/gridtypes"
 	"github.com/threefoldtech/zosbase/pkg/stubs"
-)
-
-const (
-	tcUrl  = "http://zos.tf/terms/v0.1"
-	tcHash = "9021d4dee05a661e2cb6838152c67f25" // not this is hash of the url not the document
 )
 
 type RegistrationInfo struct {
@@ -108,9 +102,8 @@ func registerNode(
 	info RegistrationInfo,
 ) (nodeID, twinID uint64, err error) {
 	var (
-		mgr    = zos4Stubs.NewIdentityManagerStub(cl)
-		netMgr = stubs.NewNetworkerLightStub(cl)
-		// substrateGateway = stubs.NewSubstrateGatewayStub(cl)
+		mgr              = zos4Stubs.NewIdentityManagerStub(cl)
+		netMgr           = stubs.NewNetworkerLightStub(cl)
 		registrarGateway = zos4Stubs.NewRegistrarGatewayStub(cl)
 	)
 
@@ -229,11 +222,12 @@ func registerNode(
 
 func ensureTwin(ctx context.Context, registrarGateway *zos4Stubs.RegistrarGatewayStub, sk ed25519.PrivateKey) (uint64, error) {
 	pubKey := sk.Public().(ed25519.PublicKey)
-	twinID, subErr := registrarGateway.GetTwinByPubKey(ctx, pubKey)
-	if subErr.IsCode(pkg.CodeNotFound) {
-		return registrarGateway.CreateTwin(ctx, "", nil)
-	} else if subErr.IsError() {
-		return 0, errors.Wrap(subErr.Err, "failed to list twins")
+	twinID, err := registrarGateway.GetTwinByPubKey(ctx, pubKey)
+	if err != nil {
+		if errors.Is(err, registrargw.ErrorRecordNotFound) {
+			return registrarGateway.CreateTwin(ctx, "", nil)
+		}
+		return 0, errors.Wrap(err, "failed to list twins")
 	}
 
 	return twinID, nil

@@ -8,10 +8,10 @@ import (
 	"github.com/rs/zerolog/log"
 	substrate "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
 	"github.com/threefoldtech/zbus"
+	"github.com/threefoldtech/zos4/pkg/power"
 	zos4stub "github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/environment"
 	"github.com/threefoldtech/zosbase/pkg/events"
-	"github.com/threefoldtech/zosbase/pkg/power"
 	"github.com/threefoldtech/zosbase/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/utils"
 	"github.com/urfave/cli/v2"
@@ -60,7 +60,7 @@ func action(cli *cli.Context) error {
 	}
 
 	identity := zos4stub.NewIdentityManagerStub(cl)
-	register := stubs.NewRegistrarStub(cl)
+	register := zos4stub.NewRegistrarStub(cl)
 
 	nodeID, err := register.NodeID(ctx)
 	if err != nil {
@@ -85,9 +85,9 @@ func action(cli *cli.Context) error {
 		return err
 	}
 
-	substrateGateway := stubs.NewSubstrateGatewayStub(cl)
+	registrarGateway := zos4stub.NewRegistrarGatewayStub(cl)
 
-	uptime, err := power.NewUptime(substrateGateway, id)
+	uptime, err := power.NewUptime(registrarGateway)
 	if err != nil {
 		return errors.Wrap(err, "failed to initialize uptime reported")
 	}
@@ -115,7 +115,7 @@ func action(cli *cli.Context) error {
 	}
 
 	// start power manager
-	power, err := power.NewPowerServer(substrateGateway, consumer, enabled, env.FarmID, nodeID, twinID, uptime)
+	power, err := power.NewPowerServer(registrarGateway, consumer, enabled, env.FarmID, nodeID, twinID, uptime)
 	if err != nil {
 		return errors.Wrap(err, "failed to initialize power manager")
 	}

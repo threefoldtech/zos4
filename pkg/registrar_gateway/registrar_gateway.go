@@ -174,18 +174,17 @@ func (g *registrarGateway) GetPowerTarget() (power substrate.NodePower, err erro
 }
 
 func (r *registrarGateway) GetTwin(id uint64) (result db.Account, err error) {
-	url := fmt.Sprintf("%s/v1/accounts/%d", r.baseURL, id)
+	url := fmt.Sprintf("%s/v1/accounts/", r.baseURL)
 	log.Trace().Str("url", "url").Uint64("id", id).Msg("get account")
 
-	return r.getTwin(url)
+	return r.getTwin(url, id)
 }
 
-func (g *registrarGateway) GetTwinByPubKey(pk []byte) (result uint64, serr pkg.SubstrateError) {
+func (r *registrarGateway) GetTwinByPubKey(pk []byte) (result uint64, err error) {
+	url := fmt.Sprintf("%s/v1/accounts/", r.baseURL)
 	log.Trace().Str("method", "GetTwinByPubKey").Str("pk", hex.EncodeToString(pk)).Msg("method called")
-	twinID, err := g.sub.GetTwinByPubKey(pk)
 
-	serr = buildSubstrateError(err)
-	return uint64(twinID), serr
+	return r.getTwinByPubKey(url, pk)
 }
 
 func (r *registrarGateway) Report(consumptions []substrate.NruConsumption) (types.Hash, error) {
@@ -364,10 +363,23 @@ func (g *registrarGateway) ensureAccount(twinID uint64, relay string, pk []byte)
 	return twin, err
 }
 
-func (g *registrarGateway) getTwin(url string) (result db.Account, err error) {
-	resp, err := g.httpClient.Get(url)
+func (r *registrarGateway) getTwin(url string, twinID uint64) (result db.Account, err error) {
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return
+	}
+
+	q := req.URL.Query()
+	q.Add("twin_id", fmt.Sprint(twinID))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := r.httpClient.Do(req)
+	if err != nil {
+		return
+	}
+
+	if resp == nil {
+		return result, errors.New("no response received")
 	}
 
 	if resp.StatusCode == http.StatusNotFound {
@@ -375,12 +387,48 @@ func (g *registrarGateway) getTwin(url string) (result db.Account, err error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return result, fmt.Errorf("failed to get twin with status code %s", resp.Status)
+		return result, fmt.Errorf("failed to get account by twin id with status code %s", resp.Status)
 	}
+
 	defer resp.Body.Close()
 
 	err = json.NewDecoder(resp.Body).Decode(&result)
-	return
+	return result, err
+}
+
+func (r *registrarGateway) getTwinByPubKey(url string, pk []byte) (result uint64, err error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return
+	}
+
+	q := req.URL.Query()
+
+	publicKeyBase64 := base64.StdEncoding.EncodeToString(pk)
+	q.Add("public_key", publicKeyBase64)
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := r.httpClient.Do(req)
+	if err != nil {
+		return
+	}
+
+	if resp == nil {
+		return result, errors.New("no response received")
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		return result, ErrorRecordNotFound
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return result, fmt.Errorf("failed to get account by public_key with status code %s", resp.Status)
+	}
+
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	return result, err
 }
 
 func (r *registrarGateway) getZosVersion(url string) (string, error) {

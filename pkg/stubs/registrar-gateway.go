@@ -270,16 +270,16 @@ func (s *RegistrarGatewayStub) GetTwin(ctx context.Context, arg0 uint64) (ret0 d
 	return
 }
 
-func (s *RegistrarGatewayStub) GetTwinByPubKey(ctx context.Context, arg0 []uint8) (ret0 uint64, ret1 pkg.SubstrateError) {
+func (s *RegistrarGatewayStub) GetTwinByPubKey(ctx context.Context, arg0 []uint8) (ret0 uint64, ret1 error) {
 	args := []interface{}{arg0}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "GetTwinByPubKey", args...)
 	if err != nil {
 		panic(err)
 	}
 	result.PanicOnError()
+	ret1 = result.CallError()
 	loader := zbus.Loader{
 		&ret0,
-		&ret1,
 	}
 	if err := result.Unmarshal(&loader); err != nil {
 		panic(err)

@@ -13,10 +13,10 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/zbus"
 	registrar "github.com/threefoldtech/zos4/pkg/registrar_light"
+	zos4Stubs "github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/app"
 	"github.com/threefoldtech/zosbase/pkg/environment"
 	"github.com/threefoldtech/zosbase/pkg/stubs"
-	zos4Stubs "github.com/threefoldtech/zosbase/pkg/stubs"
 )
 
 func green(s string) string {
@@ -39,7 +39,7 @@ func headerRenderer(ctx context.Context, c zbus.Client, h *widgets.Paragraph, r 
 	}
 
 	identity := zos4Stubs.NewIdentityManagerStub(c)
-	registrar := stubs.NewRegistrarStub(c)
+	registrar := zos4Stubs.NewRegistrarStub(c)
 
 	h.Text = "\n    Fetching realtime node information... please wait."
 
@@ -65,7 +65,7 @@ func headerRenderer(ctx context.Context, c zbus.Client, h *widgets.Paragraph, r 
 			log.Info().Err(zuiErr).Send()
 		}
 
-		farmID, _ := identity.FarmID(ctx)
+		farmID := identity.FarmID(ctx)
 		for version := range ch {
 			var name string
 			var nodeID string

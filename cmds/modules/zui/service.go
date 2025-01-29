@@ -122,7 +122,7 @@ func serviceRender(ctx context.Context, client zbus.Client, grid *ui.Grid, rende
 }
 
 func getRegistrarStatus(ctx context.Context, client zbus.Client) string {
-	register := stubs.NewRegistrarStub(client)
+	register := zos4stubs.NewRegistrarStub(client)
 	if _, err := register.NodeID(ctx); err != nil {
 		if isInProgressError(err) {
 			return InProgressStatus

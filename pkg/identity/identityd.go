@@ -8,12 +8,13 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/threefoldtech/tfgrid-sdk-go/node-registrar/pkg/db"
+	"github.com/threefoldtech/zos4/pkg/identity/store"
 	registrargw "github.com/threefoldtech/zos4/pkg/registrar_gateway"
 	"github.com/threefoldtech/zosbase/pkg/crypto"
-	"github.com/threefoldtech/zosbase/pkg/identity/store"
 
 	"github.com/pkg/errors"
-	"github.com/threefoldtech/zos4/pkg"
+	zos4pkg "github.com/threefoldtech/zos4/pkg"
+	"github.com/threefoldtech/zosbase/pkg"
 	"github.com/threefoldtech/zosbase/pkg/environment"
 )
 
@@ -32,7 +33,7 @@ type identityManager struct {
 // mode. Right now only the key store uses this flag. In case of debug migrated keys
 // to tpm are not deleted from disks. This allow switching back and forth between tpm
 // and non-tpm key stores.
-func NewManager(root string, debug bool) (pkg.IdentityManager, error) {
+func NewManager(root string, debug bool) (zos4pkg.IdentityManager, error) {
 	st, err := NewStore(root, !debug)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create key store")
@@ -76,8 +77,8 @@ func (d *identityManager) StoreKind() string {
 }
 
 // NodeID returns the node identity
-func (d *identityManager) NodeID() pkg.StrIdentifier {
-	return pkg.StrIdentifier(d.key.Identity())
+func (d *identityManager) NodeID() zos4pkg.StrIdentifier {
+	return zos4pkg.StrIdentifier(d.key.Identity())
 }
 
 // NodeID returns the node identity
@@ -122,7 +123,7 @@ func (d *identityManager) Farm() (name string, err error) {
 
 // FarmID returns the farm ID of the node or an error if no farm ID is configured
 func (d *identityManager) FarmID() pkg.FarmID {
-	return pkg.FarmID(d.env.FarmID)
+	return d.env.FarmID
 }
 
 // FarmSecret returns farm secret from kernel params
