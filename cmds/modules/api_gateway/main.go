@@ -69,7 +69,7 @@ func action(cli *cli.Context) error {
 	}
 
 	router := peer.NewRouter()
-	gw, err := registrar.NewRegistrarGateway(redis, manager)
+	gw, err := registrar.NewRegistrarGateway(redis)
 	if err != nil {
 		return fmt.Errorf("failed to create api gateway: %w", err)
 	}

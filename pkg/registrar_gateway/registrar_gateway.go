@@ -23,17 +23,14 @@ import (
 	"github.com/threefoldtech/zos4/pkg/types"
 	"github.com/threefoldtech/zosbase/pkg"
 	"github.com/threefoldtech/zosbase/pkg/environment"
-	"github.com/threefoldtech/zosbase/pkg/gridtypes"
 )
 
 const AuthHeader = "X-Auth"
 
 type registrarGateway struct {
-	sub        *substrate.Substrate
 	mu         sync.Mutex
 	baseURL    string
 	httpClient *http.Client
-	identity   gridtypes.Identity
 	privKey    ed25519.PrivateKey
 	nodeID     uint64
 	twinID     uint64
@@ -41,19 +38,14 @@ type registrarGateway struct {
 
 var ErrorRecordNotFound = errors.New("could not fine the reqested record")
 
-func NewRegistrarGateway(cl zbus.Client, manager substrate.Manager) (zos4Pkg.RegistrarGateway, error) {
+func NewRegistrarGateway(cl zbus.Client) (zos4Pkg.RegistrarGateway, error) {
 	client := http.DefaultClient
 	env := environment.MustGet()
-	sub, err := manager.Substrate()
-	if err != nil {
-		return &registrarGateway{}, err
-	}
 
 	identity := stubs.NewIdentityManagerStub(cl)
 	sk := ed25519.PrivateKey(identity.PrivateKey(context.TODO()))
 
 	gw := &registrarGateway{
-		sub:        sub,
 		httpClient: client,
 		baseURL:    env.RegistrarURL,
 		mu:         sync.Mutex{},
@@ -108,22 +100,22 @@ func (g *registrarGateway) EnsureAccount(twinID uint64, pk []byte) (twin types.A
 }
 
 func (g *registrarGateway) GetContract(id uint64) (result substrate.Contract, serr pkg.SubstrateError) {
-	log.Trace().Str("method", "GetContract").Uint64("id", id).Msg("method called")
-	contract, err := g.sub.GetContract(id)
-
-	serr = buildSubstrateError(err)
-	if err != nil {
-		return
-	}
-	return *contract, serr
+	// log.Trace().Str("method", "GetContract").Uint64("id", id).Msg("method called")
+	// contract, err := g.sub.GetContract(id)
+	//
+	// serr = buildSubstrateError(err)
+	// if err != nil {
+	// 	return
+	// }
+	return
 }
 
 func (g *registrarGateway) GetContractIDByNameRegistration(name string) (result uint64, serr pkg.SubstrateError) {
-	log.Trace().Str("method", "GetContractIDByNameRegistration").Str("name", name).Msg("method called")
-	contractID, err := g.sub.GetContractIDByNameRegistration(name)
-
-	serr = buildSubstrateError(err)
-	return contractID, serr
+	// log.Trace().Str("method", "GetContractIDByNameRegistration").Str("name", name).Msg("method called")
+	// contractID, err := g.sub.GetContractIDByNameRegistration(name)
+	//
+	// serr = buildSubstrateError(err)
+	return
 }
 
 func (r *registrarGateway) GetFarm(id uint64) (farm types.Farm, err error) {
@@ -148,16 +140,17 @@ func (r *registrarGateway) GetNodeByTwinID(twin uint64) (result uint64, err erro
 }
 
 func (g *registrarGateway) GetNodeContracts(node uint32) ([]subTypes.U64, error) {
-	log.Trace().Str("method", "GetNodeContracts").Uint32("node", node).Msg("method called")
-	return g.sub.GetNodeContracts(node)
+	// log.Trace().Str("method", "GetNodeContracts").Uint32("node", node).Msg("method called")
+	// return g.sub.GetNodeContracts(node)
+	return []subTypes.U64{}, nil
 }
 
 func (g *registrarGateway) GetNodeRentContract(node uint32) (result uint64, serr pkg.SubstrateError) {
-	log.Trace().Str("method", "GetNodeRentContract").Uint32("node", node).Msg("method called")
-	contractID, err := g.sub.GetNodeRentContract(node)
-
-	serr = buildSubstrateError(err)
-	return contractID, serr
+	// log.Trace().Str("method", "GetNodeRentContract").Uint32("node", node).Msg("method called")
+	// contractID, err := g.sub.GetNodeRentContract(node)
+	//
+	// serr = buildSubstrateError(err)
+	return
 }
 
 func (r *registrarGateway) GetNodes(farmID uint32) (nodeIDs []uint32, err error) {
@@ -168,8 +161,9 @@ func (r *registrarGateway) GetNodes(farmID uint32) (nodeIDs []uint32, err error)
 }
 
 func (g *registrarGateway) GetPowerTarget() (power substrate.NodePower, err error) {
-	log.Trace().Str("method", "GetPowerTarget").Uint32("node id", uint32(g.nodeID)).Msg("method called")
-	return g.sub.GetPowerTarget(uint32(g.nodeID))
+	// log.Trace().Str("method", "GetPowerTarget").Uint32("node id", uint32(g.nodeID)).Msg("method called")
+	// return g.sub.GetPowerTarget(uint32(g.nodeID))
+	return
 }
 
 func (r *registrarGateway) GetTwin(id uint64) (result types.Account, err error) {
@@ -187,43 +181,46 @@ func (r *registrarGateway) GetTwinByPubKey(pk []byte) (result uint64, err error)
 }
 
 func (r *registrarGateway) Report(consumptions []substrate.NruConsumption) (subTypes.Hash, error) {
-	contractIDs := make([]uint64, 0, len(consumptions))
-	for _, v := range consumptions {
-		contractIDs = append(contractIDs, uint64(v.ContractID))
-	}
-
-	log.Debug().Str("method", "Report").Uints64("contract ids", contractIDs).Msg("method called")
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	url := fmt.Sprintf("%s/v1/nodes/%d/consumption", r.baseURL, r.nodeID)
-
-	var body bytes.Buffer
-	_, err := r.httpClient.Post(url, "application/json", &body)
-	if err != nil {
-		return subTypes.Hash{}, err
-	}
-
-	// I need to know what is hash to be able to respond with it
-	return r.sub.Report(r.identity, consumptions)
+	// contractIDs := make([]uint64, 0, len(consumptions))
+	// for _, v := range consumptions {
+	// 	contractIDs = append(contractIDs, uint64(v.ContractID))
+	// }
+	//
+	// log.Debug().Str("method", "Report").Uints64("contract ids", contractIDs).Msg("method called")
+	// r.mu.Lock()
+	// defer r.mu.Unlock()
+	//
+	// url := fmt.Sprintf("%s/v1/nodes/%d/consumption", r.baseURL, r.nodeID)
+	//
+	// var body bytes.Buffer
+	// _, err := r.httpClient.Post(url, "application/json", &body)
+	// if err != nil {
+	// 	return subTypes.Hash{}, err
+	// }
+	//
+	// // I need to know what is hash to be able to respond with it
+	// return r.sub.Report(r.identity, consumptions)
+	return subTypes.Hash{}, nil
 }
 
 func (g *registrarGateway) SetContractConsumption(resources ...substrate.ContractResources) error {
-	contractIDs := make([]uint64, 0, len(resources))
-	for _, v := range resources {
-		contractIDs = append(contractIDs, uint64(v.ContractID))
-	}
-	log.Debug().Str("method", "SetContractConsumption").Uints64("contract ids", contractIDs).Msg("method called")
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	return g.sub.SetContractConsumption(g.identity, resources...)
+	// contractIDs := make([]uint64, 0, len(resources))
+	// for _, v := range resources {
+	// 	contractIDs = append(contractIDs, uint64(v.ContractID))
+	// }
+	// log.Debug().Str("method", "SetContractConsumption").Uints64("contract ids", contractIDs).Msg("method called")
+	// g.mu.Lock()
+	// defer g.mu.Unlock()
+	// return g.sub.SetContractConsumption(g.identity, resources...)
+	return nil
 }
 
 func (g *registrarGateway) SetNodePowerState(up bool) (hash subTypes.Hash, err error) {
-	log.Debug().Str("method", "SetNodePowerState").Bool("up", up).Msg("method called")
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	return g.sub.SetNodePowerState(g.identity, up)
+	// log.Debug().Str("method", "SetNodePowerState").Bool("up", up).Msg("method called")
+	// g.mu.Lock()
+	// defer g.mu.Unlock()
+	// return g.sub.SetNodePowerState(g.identity, up)
+	return subTypes.Hash{}, nil
 }
 
 func (r *registrarGateway) UpdateNode(node types.NodeRegistrationRequest) (uint64, error) {
@@ -249,9 +246,10 @@ func (r *registrarGateway) UpdateNodeUptimeV2(uptime uint64, timestampHint uint6
 }
 
 func (g *registrarGateway) GetTime() (time.Time, error) {
-	log.Trace().Str("method", "Time").Msg("method called")
-
-	return g.sub.Time()
+	// log.Trace().Str("method", "Time").Msg("method called")
+	//
+	// return g.sub.Time()
+	return time.Now(), nil
 }
 
 func buildSubstrateError(err error) (serr pkg.SubstrateError) {
@@ -442,7 +440,8 @@ func (r *registrarGateway) getZosVersion(url string) (string, error) {
 
 	defer resp.Body.Close()
 
-	var version gridtypes.Versioned
+	var version types.ZosVersion
+
 	err = json.NewDecoder(resp.Body).Decode(&version)
 
 	return version.Version, err

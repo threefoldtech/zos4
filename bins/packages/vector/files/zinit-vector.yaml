@@ -6,7 +6,7 @@ exec: |
 
   pkill vector || true
 
-  export NODE=$(identityd -address)
+  export NODE=$(identityd -id)
   export FARM=$(identityd -farm)
   export NETWORK=$(identityd -net)
 

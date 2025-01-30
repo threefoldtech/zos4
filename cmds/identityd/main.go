@@ -47,10 +47,10 @@ func main() {
 		ver      bool
 		debug    bool
 
-		id   bool
-		net  bool
-		farm bool
-		// address bool
+		id      bool
+		net     bool
+		farm    bool
+		address bool
 	)
 
 	flag.StringVar(&root, "root", "/var/cache/modules/identityd", "root working directory of the module")
@@ -61,7 +61,7 @@ func main() {
 	flag.BoolVar(&id, "id", false, "[deprecated] prints the node ID and exits")
 	flag.BoolVar(&net, "net", false, "prints the node network and exits")
 	flag.BoolVar(&farm, "farm", false, "prints the node farm id and exits")
-	// flag.BoolVar(&address, "address", false, "prints the node ss58 address and exits")
+	flag.BoolVar(&address, "address", false, "prints the node ss58 address and exits")
 
 	flag.Parse()
 	if ver {
@@ -78,7 +78,7 @@ func main() {
 		env := environment.MustGet()
 		fmt.Println(env.RunningMode.String())
 		os.Exit(0)
-	} else if id {
+	} else if id || address {
 		ctx := context.Background()
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to connect to zbus")
