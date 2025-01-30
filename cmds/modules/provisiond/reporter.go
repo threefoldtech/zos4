@@ -36,7 +36,7 @@ type Reporter struct {
 
 	identity         substrate.Identity
 	queue            *dque.DQue
-	substrateGateway *zos4stubs.RegistrarGatewayStub
+	registrarGateway *zos4stubs.RegistrarGatewayStub
 }
 
 func reportBuilder() interface{} {
@@ -80,7 +80,7 @@ func NewReporter(metricsPath string, cl zbus.Client, root string) (*Reporter, er
 		return nil, errors.Wrap(err, "failed to setup report persisted queue")
 	}
 
-	substrateGateway := zos4stubs.NewRegistrarGatewayStub(cl)
+	registrarGateway := zos4stubs.NewRegistrarGatewayStub(cl)
 
 	rrd, err := rrd.NewRRDBolt(metricsPath, 5*time.Minute, 24*time.Hour)
 	if err != nil {
@@ -92,7 +92,7 @@ func NewReporter(metricsPath string, cl zbus.Client, root string) (*Reporter, er
 		rrd:              rrd,
 		identity:         id,
 		queue:            queue,
-		substrateGateway: substrateGateway,
+		registrarGateway: registrarGateway,
 	}, nil
 }
 
@@ -106,7 +106,7 @@ func (r *Reporter) pushOne() error {
 
 	log.Info().Int("len", len(report.Consumption)).Msgf("sending capacity report")
 
-	hash, err := r.substrateGateway.Report(context.Background(), report.Consumption)
+	hash, err := r.registrarGateway.Report(context.Background(), report.Consumption)
 	if err != nil {
 		return errors.Wrap(err, "failed to publish consumption report")
 	}

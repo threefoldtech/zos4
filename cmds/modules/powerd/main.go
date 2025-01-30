@@ -67,7 +67,7 @@ func action(cli *cli.Context) error {
 		if zuiErr := zui.PushErrors(cli.Context, powerdLabel, []string{err.Error()}); zuiErr != nil {
 			log.Info().Err(zuiErr).Send()
 		}
-		return errors.Wrap(err, "failed to get node id")
+		return errors.Wrap(err, "failed to get node id from powerd")
 	}
 
 	twinID, err := register.TwinID(ctx)

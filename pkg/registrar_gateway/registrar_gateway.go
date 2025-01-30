@@ -77,29 +77,29 @@ func (r *registrarGateway) CreateNode(node types.NodeRegistrationRequest) (uint6
 	return id, err
 }
 
-func (g *registrarGateway) CreateTwin(relay string, pk []byte) (uint64, error) {
-	url := fmt.Sprintf("%s/v1/accounts", g.baseURL)
+func (r *registrarGateway) CreateTwin(relay string, pk []byte) (uint64, error) {
+	url := fmt.Sprintf("%s/v1/accounts", r.baseURL)
 	log.Debug().Str("url", url).Str("relay", relay).Str("pk", hex.EncodeToString(pk)).Msg("creating account")
 
-	g.mu.Lock()
-	defer g.mu.Unlock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
-	id, err := g.createTwin(url, []string{relay}, pk)
-	g.twinID = id
+	id, err := r.createTwin(url, []string{relay}, pk)
+	r.twinID = id
 	return id, err
 }
 
-func (g *registrarGateway) EnsureAccount(twinID uint64, pk []byte) (twin types.Account, err error) {
-	url := fmt.Sprintf("%s/v1/accounts", g.baseURL)
+func (r *registrarGateway) EnsureAccount(twinID uint64, pk []byte) (twin types.Account, err error) {
+	url := fmt.Sprintf("%s/v1/accounts", r.baseURL)
 	log.Debug().Str("url", url).Msg("ensure account")
 
-	g.mu.Lock()
-	defer g.mu.Unlock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
-	return g.ensureAccount(twinID, url, pk)
+	return r.ensureAccount(twinID, url, pk)
 }
 
-func (g *registrarGateway) GetContract(id uint64) (result substrate.Contract, serr pkg.SubstrateError) {
+func (r *registrarGateway) GetContract(id uint64) (result substrate.Contract, serr pkg.SubstrateError) {
 	// log.Trace().Str("method", "GetContract").Uint64("id", id).Msg("method called")
 	// contract, err := g.sub.GetContract(id)
 	//
@@ -110,7 +110,7 @@ func (g *registrarGateway) GetContract(id uint64) (result substrate.Contract, se
 	return
 }
 
-func (g *registrarGateway) GetContractIDByNameRegistration(name string) (result uint64, serr pkg.SubstrateError) {
+func (r *registrarGateway) GetContractIDByNameRegistration(name string) (result uint64, serr pkg.SubstrateError) {
 	// log.Trace().Str("method", "GetContractIDByNameRegistration").Str("name", name).Msg("method called")
 	// contractID, err := g.sub.GetContractIDByNameRegistration(name)
 	//
@@ -139,13 +139,13 @@ func (r *registrarGateway) GetNodeByTwinID(twin uint64) (result uint64, err erro
 	return r.getNodeByTwinID(url, twin)
 }
 
-func (g *registrarGateway) GetNodeContracts(node uint32) ([]subTypes.U64, error) {
+func (r *registrarGateway) GetNodeContracts(node uint32) ([]subTypes.U64, error) {
 	// log.Trace().Str("method", "GetNodeContracts").Uint32("node", node).Msg("method called")
 	// return g.sub.GetNodeContracts(node)
 	return []subTypes.U64{}, nil
 }
 
-func (g *registrarGateway) GetNodeRentContract(node uint32) (result uint64, serr pkg.SubstrateError) {
+func (r *registrarGateway) GetNodeRentContract(node uint32) (result uint64, serr pkg.SubstrateError) {
 	// log.Trace().Str("method", "GetNodeRentContract").Uint32("node", node).Msg("method called")
 	// contractID, err := g.sub.GetNodeRentContract(node)
 	//
@@ -160,7 +160,7 @@ func (r *registrarGateway) GetNodes(farmID uint32) (nodeIDs []uint32, err error)
 	return r.getNodesInFarm(url, farmID)
 }
 
-func (g *registrarGateway) GetPowerTarget() (power substrate.NodePower, err error) {
+func (r *registrarGateway) GetPowerTarget() (power substrate.NodePower, err error) {
 	// log.Trace().Str("method", "GetPowerTarget").Uint32("node id", uint32(g.nodeID)).Msg("method called")
 	// return g.sub.GetPowerTarget(uint32(g.nodeID))
 	return
@@ -203,7 +203,7 @@ func (r *registrarGateway) Report(consumptions []substrate.NruConsumption) (subT
 	return subTypes.Hash{}, nil
 }
 
-func (g *registrarGateway) SetContractConsumption(resources ...substrate.ContractResources) error {
+func (r *registrarGateway) SetContractConsumption(resources ...substrate.ContractResources) error {
 	// contractIDs := make([]uint64, 0, len(resources))
 	// for _, v := range resources {
 	// 	contractIDs = append(contractIDs, uint64(v.ContractID))
@@ -215,7 +215,7 @@ func (g *registrarGateway) SetContractConsumption(resources ...substrate.Contrac
 	return nil
 }
 
-func (g *registrarGateway) SetNodePowerState(up bool) (hash subTypes.Hash, err error) {
+func (r *registrarGateway) SetNodePowerState(up bool) (hash subTypes.Hash, err error) {
 	// log.Debug().Str("method", "SetNodePowerState").Bool("up", up).Msg("method called")
 	// g.mu.Lock()
 	// defer g.mu.Unlock()
@@ -245,7 +245,7 @@ func (r *registrarGateway) UpdateNodeUptimeV2(uptime uint64, timestampHint uint6
 	return r.updateNodeUptimeV2(r.twinID, url, uptime)
 }
 
-func (g *registrarGateway) GetTime() (time.Time, error) {
+func (r *registrarGateway) GetTime() (time.Time, error) {
 	// log.Trace().Str("method", "Time").Msg("method called")
 	//
 	// return g.sub.Time()
@@ -305,9 +305,9 @@ func createChallenge(timestamp int64, publicKey string) string {
 	return hex.EncodeToString(hash[:])
 }
 
-func (g *registrarGateway) createTwin(url string, relayURL []string, pk []byte) (uint64, error) {
+func (r *registrarGateway) createTwin(url string, relayURL []string, pk []byte) (uint64, error) {
 	publicKeyBase64 := base64.StdEncoding.EncodeToString(pk)
-	signature := getNodeSignature(pk, g.privKey)
+	signature := getNodeSignature(pk, r.privKey)
 
 	account := types.AccountCreationRequest{
 		PublicKey: publicKeyBase64,
@@ -325,7 +325,7 @@ func (g *registrarGateway) createTwin(url string, relayURL []string, pk []byte) 
 		return 0, err
 	}
 
-	resp, err := g.httpClient.Post(url, "application/json", &body)
+	resp, err := r.httpClient.Post(url, "application/json", &body)
 	if err != nil {
 		return 0, err
 	}
@@ -341,20 +341,22 @@ func (g *registrarGateway) createTwin(url string, relayURL []string, pk []byte) 
 	return twinID, err
 }
 
-func (g *registrarGateway) ensureAccount(twinID uint64, relay string, pk []byte) (types.Account, error) {
-	twin, err := g.GetTwin(twinID)
+func (r *registrarGateway) ensureAccount(twinID uint64, relay string, pk []byte) (twin types.Account, err error) {
+	url := fmt.Sprintf("%s/v1/accounts/", r.baseURL)
+
+	twin, err = r.getTwin(url, twinID)
 	if err != nil {
 		if !errors.Is(err, ErrorRecordNotFound) {
 			return types.Account{}, err
 		}
 
 		// account not found, create the account
-		twinID, err = g.CreateTwin(relay, pk)
+		twinID, err = r.createTwin(url, []string{relay}, pk)
 		if err != nil {
 			return types.Account{}, err
 		}
 
-		twin, err = g.GetTwin(twinID)
+		twin, err = r.getTwin(url, twinID)
 	}
 
 	return twin, err

@@ -53,8 +53,8 @@ func WithStartupOrder(t ...gridtypes.WorkloadType) EngineOption {
 // WithAPIGateway sets the API Gateway. If set it will
 // be used by the engine to fetch (and validate) the deployment contract
 // then contract with be available on the deployment context
-func WithAPIGateway(node uint64, substrateGateway *stubs.RegistrarGatewayStub) EngineOption {
-	return &withAPIGateway{node, substrateGateway}
+func WithAPIGateway(node uint64, registrarGateway *stubs.RegistrarGatewayStub) EngineOption {
+	return &withAPIGateway{node, registrarGateway}
 }
 
 // WithRerunAll if set forces the engine to re-run all reservations
@@ -153,12 +153,12 @@ func (o *withAdminsKeyGetter) apply(e *NativeEngine) {
 
 type withAPIGateway struct {
 	nodeID           uint64
-	substrateGateway *stubs.RegistrarGatewayStub
+	registrarGateway *stubs.RegistrarGatewayStub
 }
 
 func (o *withAPIGateway) apply(e *NativeEngine) {
 	e.nodeID = o.nodeID
-	e.registrarGateway = o.substrateGateway
+	e.registrarGateway = o.registrarGateway
 }
 
 type withStartupOrder struct {

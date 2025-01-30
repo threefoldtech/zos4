@@ -19,8 +19,8 @@ type ContractEventHandler struct {
 	eventsConsumer   *events.RedisConsumer
 }
 
-func NewContractEventHandler(node uint64, substrateGateway *stubs.RegistrarGatewayStub, engine provision.Engine, events *events.RedisConsumer) ContractEventHandler {
-	return ContractEventHandler{node: node, registrarGateway: substrateGateway, engine: engine, eventsConsumer: events}
+func NewContractEventHandler(node uint64, registrarGateway *stubs.RegistrarGatewayStub, engine provision.Engine, events *events.RedisConsumer) ContractEventHandler {
+	return ContractEventHandler{node: node, registrarGateway: registrarGateway, engine: engine, eventsConsumer: events}
 }
 
 func (r *ContractEventHandler) current() (map[uint64]gridtypes.Deployment, error) {

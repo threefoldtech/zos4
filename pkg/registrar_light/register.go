@@ -138,7 +138,7 @@ func registerNode(
 	}
 
 	log.Info().Str("id", mgr.NodeID(ctx).Identity()).Msg("start registration of the node")
-	log.Info().Msg("registering node on blockchain")
+	log.Info().Msg("registering node on zos4 registrar")
 
 	sk := ed25519.PrivateKey(mgr.PrivateKey(ctx))
 	pubKey := sk.Public().(ed25519.PublicKey)
@@ -151,11 +151,6 @@ func registerNode(
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "failed to ensure twin")
 	}
-
-	// var serial db.OptionBoardSerial
-	// if len(info.SerialNumber) != 0 {
-	// 	serial = gridtypes.OptionBoardSerial{HasValue: true, AsValue: info.SerialNumber}
-	// }
 
 	real := types.Node{
 		FarmID:      uint64(env.FarmID),
