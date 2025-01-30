@@ -31,59 +31,54 @@ type UpdateAccountRequest struct {
 	Relays    pq.StringArray `json:"relays"`
 	RMBEncKey string         `json:"rmb_enc_key"`
 }
+
 type AccountCreationRequest struct {
-	Timestamp int64  `json:"timestamp" binding:"required"`
-	PublicKey string `json:"public_key" binding:"required"` // base64 encoded
+	Timestamp int64  `json:"timestamp"`
+	PublicKey string `json:"public_key"`
 	// the registrar expect a signature of a message with format `timestampStr:publicKeyBase64`
 	// - signature format: base64(ed25519_or_sr22519_signature)
-	Signature string   `json:"signature" binding:"required"`
-	Relays    []string `json:"relays,omitempty"`
-	RMBEncKey string   `json:"rmb_enc_key,omitempty"`
+	Signature string   `json:"signature"`
+	Relays    []string `json:"relays"`
+	RMBEncKey string   `json:"rmb_enc_key"`
 }
+
 type UptimeReportRequest struct {
-	Uptime    time.Duration `json:"uptime" binding:"required"`
-	Timestamp time.Time     `json:"timestamp" binding:"required"`
+	Uptime    time.Duration `json:"uptime"`
+	Timestamp time.Time     `json:"timestamp"`
 }
+
 type Account struct {
-	TwinID    uint64         `gorm:"primaryKey;autoIncrement"`
-	Relays    pq.StringArray `gorm:"type:text[];default:'{}'" json:"relays"` // Optional list of relay domains
-	RMBEncKey string         `gorm:"type:text" json:"rmb_enc_key"`           // Optional base64 encoded public key for rmb communication
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	TwinID    uint64         `json:"twin_id"`
+	Relays    pq.StringArray `json:"relays"`      // Optional list of relay domains
+	RMBEncKey string         `json:"rmb_enc_key"` // Optional base64 encoded public key for rmb communication
 	// The public key (ED25519 for nodes, ED25519 or SR25519 for farmers) in the more standard base64 since we are moving from substrate echo system?
 	// (still SS58 can be used or plain base58 ,TBD)
-	PublicKey string `gorm:"type:text;not null;unique"`
-	// Relations | likely we need to use OnDelete:RESTRICT (Prevent Twin deletion if farms exist)
-	Farms []Farm `gorm:"foreignKey:TwinID;references:TwinID;constraint:OnDelete:RESTRICT"`
+	PublicKey string `json:"public_key"`
 }
 
 type Farm struct {
-	FarmID    uint64 `gorm:"primaryKey;autoIncrement" json:"farm_id"`
-	FarmName  string `gorm:"size:40;not null;unique;check:farm_name <> ''" json:"farm_name"`
-	TwinID    uint64 `json:"twin_id" gorm:"not null;check:twin_id > 0"` // Farmer account reference
+	FarmID    uint64 `json:"farm_id"`
+	FarmName  string `json:"farm_name"`
+	TwinID    uint64 `json:"twin_id"` // Farmer account reference
 	Dedicated bool   `json:"dedicated"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-
-	Nodes []Node `gorm:"foreignKey:FarmID;references:FarmID;constraint:OnDelete:RESTRICT" json:"nodes"`
 }
 
 type Node struct {
-	NodeID uint64 `json:"node_id" gorm:"primaryKey;autoIncrement"`
-	// Constraints set to prevents unintended account deletion if linked Farms/nodes exist.
-	FarmID uint64 `json:"farm_id" gorm:"not null;check:farm_id> 0;foreignKey:FarmID;references:FarmID;constraint:OnDelete:RESTRICT"`
-	TwinID uint64 `json:"twin_id" gorm:"not null;unique;check:twin_id > 0;foreignKey:TwinID;references:TwinID;constraint:OnDelete:RESTRICT"` // Node account reference
+	NodeID uint64 `json:"node_id"`
+	FarmID uint64 `json:"farm_id"`
+	TwinID uint64 `json:"twin_id"` // Node account reference
 
-	Location Location `json:"location" gorm:"not null;type:json"`
+	Location Location `json:"location"`
 
-	// PublicConfig PublicConfig `json:"public_config" gorm:"type:json"`
-	Resources    Resources   `json:"resources" gorm:"not null;type:json"`
-	Interfaces   []Interface `json:"interface" gorm:"not null;type:json"`
+	Resources    Resources   `json:"resources"`
+	Interfaces   []Interface `json:"interface"`
 	SecureBoot   bool
 	Virtualized  bool
 	SerialNumber string
 
-	UptimeReports []UptimeReport `json:"uptime" gorm:"foreignKey:NodeID;references:NodeID;constraint:OnDelete:CASCADE"`
+	UptimeReports []UptimeReport `json:"uptime"`
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -118,8 +113,8 @@ type Resources struct {
 }
 
 type Location struct {
-	Country   string `json:"country" gorm:"not null"`
-	City      string `json:"city" gorm:"not null"`
-	Longitude string `json:"longitude" gorm:"not null"`
-	Latitude  string `json:"latitude" gorm:"not null"`
+	Country   string `json:"country"`
+	City      string `json:"city"`
+	Longitude string `json:"longitude"`
+	Latitude  string `json:"latitude"`
 }

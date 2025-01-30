@@ -56,7 +56,7 @@ func action(cli *cli.Context) error {
 	idStub := stubs.NewIdentityManagerStub(redis)
 
 	sk := ed25519.PrivateKey(idStub.PrivateKey(cli.Context))
-	pubKey := sk.Public().(ed25519.PrivateKey)
+	pubKey := sk.Public().(ed25519.PublicKey)
 
 	log.Info().Str("public key", string(pubKey)).Msg("node public key")
 	if err != nil {

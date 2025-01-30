@@ -141,7 +141,7 @@ func registerNode(
 	log.Info().Msg("registering node on blockchain")
 
 	sk := ed25519.PrivateKey(mgr.PrivateKey(ctx))
-	pubKey := sk.Public().(ed25519.PrivateKey)
+	pubKey := sk.Public().(ed25519.PublicKey)
 
 	if _, err := registrarGateway.EnsureAccount(ctx, twinID, pubKey); err != nil {
 		return 0, 0, errors.Wrap(err, "failed to ensure account")

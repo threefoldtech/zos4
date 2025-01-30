@@ -164,7 +164,7 @@ func (r *Registrar) reActivate(ctx context.Context, cl zbus.Client) error {
 	identityManager := zos4stubs.NewIdentityManagerStub(cl)
 
 	sk := ed25519.PrivateKey(identityManager.PrivateKey(ctx))
-	pubKey := sk.Public().(ed25519.PrivateKey)
+	pubKey := sk.Public().(ed25519.PublicKey)
 
 	twinID, err := r.TwinID()
 	if err != nil {
