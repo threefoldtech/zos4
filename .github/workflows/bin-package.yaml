@@ -56,6 +56,7 @@ jobs:
           threefold: ${{ secrets.token }}
           action: publish
           baseurl: 'https://v4.hub.grid.tf'
+          backend: 'v4.hub.grid.tf:9941'
           user: tf-autobuilder
           root: bins/releases/${{ inputs.package }}
           name: ${{ steps.package.outputs.name }}.flist
