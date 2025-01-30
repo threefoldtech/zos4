@@ -61,6 +61,7 @@ jobs:
         uses: threefoldtech/publish-flist@master
         with:
           token: ${{ secrets.HUB_JWT }}
+          baseurl: https://v4.hub.grid.tf
           action: publish
           user: tf-autobuilder
           root: archive
@@ -75,6 +76,7 @@ jobs:
         if: success() && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/zos-light')
         with:
           token: ${{ secrets.HUB_JWT }}
+          baseurl: https://v4.hub.grid.tf
           action: tag
           user: tf-autobuilder
           name: ${{ steps.tag.outputs.reference }}/zos.flist
@@ -88,6 +90,7 @@ jobs:
         uses: threefoldtech/publish-flist@master
         with:
           token: ${{ secrets.HUB_JWT }}
+          baseurl: https://v4.hub.grid.tf
           action: crosstag
           user: tf-zos
           name: development-v4
