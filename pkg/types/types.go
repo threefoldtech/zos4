@@ -6,18 +6,8 @@ import (
 	"github.com/lib/pq"
 )
 
-type NodeRegistrationRequest struct {
-	TwinID       uint64      `json:"twin_id" binding:"required,min=1"`
-	FarmID       uint64      `json:"farm_id" binding:"required,min=1"`
-	Resources    Resources   `json:"resources" binding:"required"`
-	Location     Location    `json:"location" binding:"required"`
-	Interfaces   []Interface `json:"interfaces" binding:"required,min=1,dive"`
-	SecureBoot   bool        `json:"secure_boot"`
-	Virtualized  bool        `json:"virtualized"`
-	SerialNumber string      `json:"serial_number" binding:"required"`
-}
-
 type UpdateNodeRequest struct {
+	TwinID       uint64      `json:"twin_id" binding:"required,min=1"`
 	FarmID       uint64      `json:"farm_id" binding:"required,min=1"`
 	Resources    Resources   `json:"resources" binding:"required,min=1"`
 	Location     Location    `json:"location" binding:"required"`
@@ -48,9 +38,9 @@ type UptimeReportRequest struct {
 }
 
 type Account struct {
-	TwinID    uint64         `json:"twin_id"`
-	Relays    pq.StringArray `json:"relays"`      // Optional list of relay domains
-	RMBEncKey string         `json:"rmb_enc_key"` // Optional base64 encoded public key for rmb communication
+	TwinID    uint64   `json:"twin_id"`
+	Relays    []string `json:"relays"`      // Optional list of relay domains
+	RMBEncKey string   `json:"rmb_enc_key"` // Optional base64 encoded public key for rmb communication
 	// The public key (ED25519 for nodes, ED25519 or SR25519 for farmers) in the more standard base64 since we are moving from substrate echo system?
 	// (still SS58 can be used or plain base58 ,TBD)
 	PublicKey string `json:"public_key"`
@@ -72,31 +62,26 @@ type Node struct {
 
 	Location Location `json:"location"`
 
-	Resources    Resources   `json:"resources"`
-	Interfaces   []Interface `json:"interface"`
-	SecureBoot   bool
-	Virtualized  bool
-	SerialNumber string
-
+	Resources     Resources      `json:"resources"`
+	Interfaces    []Interface    `json:"interface"`
+	SecureBoot    bool           `json:"secure_boot"`
+	Virtualized   bool           `json:"virtualized"`
+	SerialNumber  string         `json:"serial_number"`
 	UptimeReports []UptimeReport `json:"uptime"`
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Approved  bool
+	Approved bool
 }
 
 type UptimeReport struct {
-	ID         uint64        `gorm:"primaryKey;autoIncrement"`
-	NodeID     uint64        `gorm:"index"`
-	Duration   time.Duration // Uptime duration for this period
-	Timestamp  time.Time     `gorm:"index"`
-	WasRestart bool          // True if this report followed a restart
-	CreatedAt  time.Time
+	ID         uint64
+	NodeID     uint64        `json:"node_id"`
+	Duration   time.Duration `json:"duration"`
+	Timestamp  time.Time     `json:"timestamp"`
+	WasRestart bool          `json:"was_restart"` // True if this report followed a restart
 }
 
 type ZosVersion struct {
-	Key     string `gorm:"primaryKey;size:50"`
-	Version string `gorm:"not null"`
+	Version string `json:"version"`
 }
 
 type Interface struct {

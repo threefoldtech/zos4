@@ -23,15 +23,15 @@ type RegistrarGatewayStub struct {
 func NewRegistrarGatewayStub(client zbus.Client) *RegistrarGatewayStub {
 	return &RegistrarGatewayStub{
 		client: client,
-		module: "registrar-gateway",
+		module: "api-gateway",
 		object: zbus.ObjectID{
-			Name:    "registrar-gateway",
+			Name:    "api-gateway",
 			Version: "0.0.1",
 		},
 	}
 }
 
-func (s *RegistrarGatewayStub) CreateNode(ctx context.Context, arg0 types.NodeRegistrationRequest) (ret0 uint64, ret1 error) {
+func (s *RegistrarGatewayStub) CreateNode(ctx context.Context, arg0 types.UpdateNodeRequest) (ret0 uint64, ret1 error) {
 	args := []interface{}{arg0}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "CreateNode", args...)
 	if err != nil {
@@ -48,7 +48,7 @@ func (s *RegistrarGatewayStub) CreateNode(ctx context.Context, arg0 types.NodeRe
 	return
 }
 
-func (s *RegistrarGatewayStub) CreateTwin(ctx context.Context, arg0 string, arg1 []uint8) (ret0 uint64, ret1 error) {
+func (s *RegistrarGatewayStub) CreateTwin(ctx context.Context, arg0 string, arg1 []uint8) (ret0 types.Account, ret1 error) {
 	args := []interface{}{arg0, arg1}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "CreateTwin", args...)
 	if err != nil {
@@ -65,8 +65,8 @@ func (s *RegistrarGatewayStub) CreateTwin(ctx context.Context, arg0 string, arg1
 	return
 }
 
-func (s *RegistrarGatewayStub) EnsureAccount(ctx context.Context, arg0 uint64, arg1 []uint8) (ret0 types.Account, ret1 error) {
-	args := []interface{}{arg0, arg1}
+func (s *RegistrarGatewayStub) EnsureAccount(ctx context.Context, arg0 []uint8) (ret0 types.Account, ret1 error) {
+	args := []interface{}{arg0}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "EnsureAccount", args...)
 	if err != nil {
 		panic(err)
@@ -355,7 +355,7 @@ func (s *RegistrarGatewayStub) SetNodePowerState(ctx context.Context, arg0 bool)
 	return
 }
 
-func (s *RegistrarGatewayStub) UpdateNode(ctx context.Context, arg0 types.NodeRegistrationRequest) (ret0 uint64, ret1 error) {
+func (s *RegistrarGatewayStub) UpdateNode(ctx context.Context, arg0 types.UpdateNodeRequest) (ret0 uint64, ret1 error) {
 	args := []interface{}{arg0}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "UpdateNode", args...)
 	if err != nil {

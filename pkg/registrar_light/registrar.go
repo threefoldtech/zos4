@@ -166,11 +166,7 @@ func (r *Registrar) reActivate(ctx context.Context, cl zbus.Client) error {
 	sk := ed25519.PrivateKey(identityManager.PrivateKey(ctx))
 	pubKey := sk.Public().(ed25519.PublicKey)
 
-	twinID, err := r.TwinID()
-	if err != nil {
-		return err
-	}
-	_, err = registrarGateway.EnsureAccount(ctx, uint64(twinID), pubKey)
+	_, err := registrarGateway.EnsureAccount(ctx, pubKey)
 
 	return err
 }

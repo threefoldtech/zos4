@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"fmt"
-	"reflect"
+	// "reflect"
 	"strings"
 	"time"
 
@@ -143,39 +143,41 @@ func registerNode(
 	sk := ed25519.PrivateKey(mgr.PrivateKey(ctx))
 	pubKey := sk.Public().(ed25519.PublicKey)
 
-	if _, err := registrarGateway.EnsureAccount(ctx, twinID, pubKey); err != nil {
+	account, err := registrarGateway.EnsureAccount(ctx, pubKey)
+	if err != nil {
+		log.Info().Msg("failed to EnsureAccount")
 		return 0, 0, errors.Wrap(err, "failed to ensure account")
 	}
+	twinID = account.TwinID
 
-	twinID, err = ensureTwin(ctx, registrarGateway, sk)
-	if err != nil {
-		return 0, 0, errors.Wrap(err, "failed to ensure twin")
-	}
+	serial := info.SerialNumber
 
 	real := types.Node{
-		FarmID:      uint64(env.FarmID),
-		TwinID:      twinID,
-		Resources:   resources,
-		Location:    location,
-		Interfaces:  []types.Interface{interfaces},
-		SecureBoot:  info.SecureBoot,
-		Virtualized: info.Virtualized,
+		FarmID:       uint64(env.FarmID),
+		TwinID:       twinID,
+		Resources:    resources,
+		Location:     location,
+		Interfaces:   []types.Interface{interfaces},
+		SecureBoot:   info.SecureBoot,
+		Virtualized:  info.Virtualized,
+		SerialNumber: serial,
 	}
 
-	req := types.NodeRegistrationRequest{
-		FarmID:      real.FarmID,
-		TwinID:      real.TwinID,
-		Resources:   real.Resources,
-		Location:    real.Location,
-		Interfaces:  real.Interfaces,
-		SecureBoot:  real.SecureBoot,
-		Virtualized: real.Virtualized,
+	req := types.UpdateNodeRequest{
+		TwinID:       real.TwinID,
+		FarmID:       real.FarmID,
+		Resources:    real.Resources,
+		Location:     real.Location,
+		Interfaces:   real.Interfaces,
+		SecureBoot:   real.SecureBoot,
+		Virtualized:  real.Virtualized,
+		SerialNumber: real.SerialNumber,
 	}
 
 	nodeID, regErr := registrarGateway.GetNodeByTwinID(ctx, twinID)
 	if regErr != nil {
-		if errors.Is(regErr, registrargw.ErrorRecordNotFound) {
-			// node not found, create node
+		log.Debug().Err(regErr).Msg("GetNodeByTwinID error")
+		if strings.Contains(regErr.Error(), registrargw.ErrorRecordNotFound.Error()) {
 			nodeID, err = registrarGateway.CreateNode(ctx, req)
 			if err != nil {
 				return 0, 0, errors.Wrap(err, "failed to create node on chain")
@@ -201,28 +203,28 @@ func registerNode(
 
 	// node exists. we validate everything is good
 	// otherwise we update the node
-	log.Debug().Uint64("node", nodeID).Msg("node already found on blockchain")
+	log.Debug().Uint64("node", nodeID).Msg("node already found on registrar")
 
-	if !reflect.DeepEqual(real, onChain) {
-		log.Debug().Msgf("node data have changed, issuing an update node: %+v", real)
-		_, err := registrarGateway.UpdateNode(ctx, req)
-		if err != nil {
-			return 0, 0, errors.Wrapf(err, "failed to update node data with id: %d", nodeID)
-		}
-	}
+	// if !reflect.DeepEqual(real, onChain) {
+	// 	log.Debug().Msgf("node data have changed, issuing an update node: %+v", real)
+	// 	_, err := registrarGateway.UpdateNode(ctx, req)
+	// 	if err != nil {
+	// 		return 0, 0, errors.Wrapf(err, "failed to update node data with id: %d", nodeID)
+	// 	}
+	// }
 
 	return nodeID, twinID, err
 }
 
-func ensureTwin(ctx context.Context, registrarGateway *zos4Stubs.RegistrarGatewayStub, sk ed25519.PrivateKey) (uint64, error) {
-	pubKey := sk.Public().(ed25519.PublicKey)
-	twinID, err := registrarGateway.GetTwinByPubKey(ctx, pubKey)
-	if err != nil {
-		if errors.Is(err, registrargw.ErrorRecordNotFound) {
-			return registrarGateway.CreateTwin(ctx, "", nil)
-		}
-		return 0, errors.Wrap(err, "failed to list twins")
-	}
-
-	return twinID, nil
-}
+// func ensureTwin(ctx context.Context, registrarGateway *zos4Stubs.RegistrarGatewayStub, sk ed25519.PrivateKey) (uint64, error) {
+// 	pubKey := sk.Public().(ed25519.PublicKey)
+// 	twinID, err := registrarGateway.GetTwinByPubKey(ctx, pubKey)
+// 	if err != nil {
+// 		if errors.Is(err, registrargw.ErrorRecordNotFound) {
+// 			return registrarGateway.CreateTwin(ctx, "", nil)
+// 		}
+// 		return 0, errors.Wrap(err, "failed to list twins")
+// 	}
+//
+// 	return twinID, nil
+// }

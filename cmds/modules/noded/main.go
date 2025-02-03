@@ -69,7 +69,11 @@ func registerationServer(ctx context.Context, msgBrokerCon string, env environme
 	}
 
 	registrar := registrar.NewRegistrar(ctx, redis, env, info)
-	server.Register(zbus.ObjectID{Name: "registrar", Version: "0.0.1"}, registrar)
+	err = server.Register(zbus.ObjectID{Name: "registrar", Version: "0.0.1"}, registrar)
+	if err != nil {
+		return err
+	}
+
 	log.Debug().Msg("object registered")
 	if err := server.Run(ctx); err != nil && err != context.Canceled {
 		log.Fatal().Err(err).Msg("unexpected error exited registrar")
@@ -188,6 +192,7 @@ func action(cli *cli.Context) error {
 	exp := backoff.NewExponentialBackOff()
 	exp.MaxInterval = 2 * time.Minute
 	bo := backoff.WithContext(exp, ctx)
+
 	err = backoff.RetryNotify(func() error {
 		var err error
 		node, err = registrar.NodeID(ctx)
@@ -203,6 +208,7 @@ func action(cli *cli.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get node id")
 	}
+
 	sub, err := environment.GetSubstrate()
 	if err != nil {
 		return err
