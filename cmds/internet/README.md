@@ -12,7 +12,7 @@ The internet module bootstraps the private zos network as follows:
 
 - Start a DHCP daemon after the Bridge and interface are brought UP to get an IP.
 
-- Test the internet connetction by trying to connect to some addresses `"bootstrap.grid.tf:http", "hub.grid.tf:http"`
+- Test the internet connetction by trying to connect to some addresses `"bootstrap.grid.tf:http", "v4.hub.grid.tf:http"`
 
 ## Build
 

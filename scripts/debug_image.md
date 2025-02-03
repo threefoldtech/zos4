@@ -22,10 +22,10 @@ Either during development, specify a directory containing the rootfs. Or to debu
 ## Image Types
 
 - Machine: Includes the full rootfs with a kernel and initramfs image.
-    the creation tutorial [here](../docs/manual/zmachine/zmachine.md)
+  the creation tutorial [here](../docs/manual/zmachine/zmachine.md)
 
 - Container: Contains only the rootfs.
-    in this case wil use kernel and initramfs from cloud container [flist](https://hub.grid.tf/tf-autobuilder/cloud-container-9dba60e.flist.md)
+  in this case wil use kernel and initramfs from cloud container [flist](https://hub.grid.tf/tf-autobuilder/cloud-container-9dba60e.flist.md)
 
 ## Flags
 
@@ -78,44 +78,44 @@ NOTE:
 
 - **cloud-hypervisor**
 
-    ```bash
-    git clone https://github.com/cloud-hypervisor/cloud-hypervisor.git
-    cd cloud-hypervisor
-    cargo build --release
-    sudo setcap cap_net_admin+ep ./target/release/cloud-hypervisor
+  ```bash
+  git clone https://github.com/cloud-hypervisor/cloud-hypervisor.git
+  cd cloud-hypervisor
+  cargo build --release
+  sudo setcap cap_net_admin+ep ./target/release/cloud-hypervisor
 
-    sudo ln -s $(realpath ./target/release/cloud-hypervisor) /usr/local/bin/cloud-hypervisor
-    ```
+  sudo ln -s $(realpath ./target/release/cloud-hypervisor) /usr/local/bin/cloud-hypervisor
+  ```
 
 - **virtiofsd**
 
-    ```bash
-    git clone https://gitlab.com/muhamad.azmy/virtiofsd.git
-    cd virtiofsd
-    cargo build --release
-    sudo setcap cap_net_admin+ep ./target/release/virtiofsd
+  ```bash
+  git clone https://gitlab.com/muhamad.azmy/virtiofsd.git
+  cd virtiofsd
+  cargo build --release
+  sudo setcap cap_net_admin+ep ./target/release/virtiofsd
 
-    sudo ln -s $(realpath ./target/release/virtiofsd) /usr/local/bin/virtiofsd
-    ```
+  sudo ln -s $(realpath ./target/release/virtiofsd) /usr/local/bin/virtiofsd
+  ```
 
 - **rfs**
 
-    ```bash
-    wget https://github.com/threefoldtech/rfs/releases/download/v1.1.1/rfs
-    chmod +x ./rfs
+  ```bash
+  wget https://github.com/threefoldtech/rfs/releases/download/v1.1.1/rfs
+  chmod +x ./rfs
 
-    sudo ln -s $(realpath ./rfs) /usr/local/bin/rfs1
-    ```
+  sudo ln -s $(realpath ./rfs) /usr/local/bin/rfs1
+  ```
 
 - **mkdosfs**
-    only needed if the script gonna create the cidata image.
+  only needed if the script gonna create the cidata image.
 
-    ```bash
-    apt-get install dosfstools
-    ```
+  ```bash
+  apt-get install dosfstools
+  ```
 
 - **screen**
 
-    ```bash
-    apt-get install screen
-    ```
+  ```bash
+  apt-get install screen
+  ```
