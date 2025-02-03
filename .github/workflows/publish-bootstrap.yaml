@@ -36,6 +36,7 @@ jobs:
         uses: threefoldtech/publish-flist@master
         with:
           action: publish
+          baseurl: 'https://v4.hub.grid.tf'
           user: tf-autobuilder
           root: archive
           token: ${{ secrets.HUB_JWT }}
@@ -45,6 +46,7 @@ jobs:
         uses: threefoldtech/publish-flist@master
         with:
           action: symlink
+          baseurl: 'https://v4.hub.grid.tf'
           user: tf-autobuilder
           token: ${{ secrets.HUB_JWT }}
           name: ${{ steps.setname.outputs.build }}
@@ -54,6 +56,7 @@ jobs:
         uses: threefoldtech/publish-flist@master
         with:
           action: symlink
+          baseurl: 'https://v4.hub.grid.tf'
           user: tf-autobuilder
           token: ${{ secrets.HUB_JWT }}
           name: ${{ steps.setname.outputs.build }}
