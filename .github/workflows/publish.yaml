@@ -61,8 +61,8 @@ jobs:
         uses: threefoldtech/publish-flist@master
         with:
           token: ${{ secrets.HUB_AUTOMATION_TOKEN }}
-          baseurl: 'https://v4.hub.grid.tf'
-          backend: 'v4.hub.grid.tf:9941'
+          baseurl: "https://v4.hub.grid.tf"
+          backend: "v4.hub.grid.tf:9941"
           action: publish
           user: tf-autobuilder
           root: archive
@@ -77,7 +77,7 @@ jobs:
         if: success() && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/zos-light')
         with:
           token: ${{ secrets.HUB_AUTOMATION_TOKEN }}
-          baseurl: 'https://v4.hub.grid.tf'
+          baseurl: "https://v4.hub.grid.tf"
           action: tag
           user: tf-autobuilder
           name: ${{ steps.tag.outputs.reference }}/zos.flist
@@ -87,11 +87,11 @@ jobs:
       # this basically releases this build to devnet
       # TODO remove zos-light
       - name: Cross tagging (development)
-        if: success() && (github.ref == 'refs/heads/main' ||  github.ref == 'refs/heads/zos-light')
+        if: success() && (github.ref == 'refs/heads/main' ||  github.ref == 'refs/heads/register-nodes-in-registrar-server-test')
         uses: threefoldtech/publish-flist@master
         with:
           token: ${{ secrets.HUB_AUTOMATION_TOKEN }}
-          baseurl: 'https://v4.hub.grid.tf'
+          baseurl: "https://v4.hub.grid.tf"
           action: crosstag
           user: tf-zos
           name: development-v4
