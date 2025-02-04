@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"fmt"
-	// "reflect"
+	"reflect"
 	"strings"
 	"time"
 
@@ -205,26 +205,13 @@ func registerNode(
 	// otherwise we update the node
 	log.Debug().Uint64("node", nodeID).Msg("node already found on registrar")
 
-	// if !reflect.DeepEqual(real, onChain) {
-	// 	log.Debug().Msgf("node data have changed, issuing an update node: %+v", real)
-	// 	_, err := registrarGateway.UpdateNode(ctx, req)
-	// 	if err != nil {
-	// 		return 0, 0, errors.Wrapf(err, "failed to update node data with id: %d", nodeID)
-	// 	}
-	// }
+	if !reflect.DeepEqual(real, onChain) {
+		log.Debug().Msgf("node data have changed, issuing an update node real: %+v\nonchain: %+v", real, onChain)
+		_, err := registrarGateway.UpdateNode(ctx, req)
+		if err != nil {
+			return 0, 0, errors.Wrapf(err, "failed to update node data with id: %d", nodeID)
+		}
+	}
 
 	return nodeID, twinID, err
 }
-
-// func ensureTwin(ctx context.Context, registrarGateway *zos4Stubs.RegistrarGatewayStub, sk ed25519.PrivateKey) (uint64, error) {
-// 	pubKey := sk.Public().(ed25519.PublicKey)
-// 	twinID, err := registrarGateway.GetTwinByPubKey(ctx, pubKey)
-// 	if err != nil {
-// 		if errors.Is(err, registrargw.ErrorRecordNotFound) {
-// 			return registrarGateway.CreateTwin(ctx, "", nil)
-// 		}
-// 		return 0, errors.Wrap(err, "failed to list twins")
-// 	}
-//
-// 	return twinID, nil
-// }
