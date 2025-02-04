@@ -98,11 +98,6 @@ func action(cli *cli.Context) error {
 	}
 	api.SetupRoutes(router)
 
-	// pair, err := id.KeyPair()
-	// if err != nil {
-	// 	return err
-	// }
-
 	bo := backoff.NewExponentialBackOff()
 	bo.MaxElapsedTime = 0
 	backoff.Retry(func() error {

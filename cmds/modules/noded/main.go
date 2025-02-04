@@ -237,9 +237,7 @@ func action(cli *cli.Context) error {
 	log.Info().Uint32("node", node).Uint32("twin", twin).Msg("node registered")
 
 	log.Info().Uint32("twin", twin).Msg("node has been registered")
-	if err != nil {
-		return err
-	}
+
 	if err := server.Run(ctx); err != nil && err != context.Canceled {
 		log.Fatal().Err(err).Msg("unexpected error")
 	}
