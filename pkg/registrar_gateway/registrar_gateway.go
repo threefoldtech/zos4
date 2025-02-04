@@ -56,11 +56,11 @@ func NewRegistrarGateway(cl zbus.Client) (zos4Pkg.RegistrarGateway, error) {
 	twin, err := gw.GetTwinByPubKey(pk)
 	if err == nil {
 		gw.twinID = twin
-	}
 
-	node, err := gw.GetNodeByTwinID(twin)
-	if err == nil {
-		gw.nodeID = node
+		node, err := gw.GetNodeByTwinID(twin)
+		if err == nil {
+			gw.nodeID = node
+		}
 	}
 
 	return gw, nil
@@ -323,7 +323,7 @@ func (r *registrarGateway) createTwin(url string, relayURL []string, pk []byte) 
 		return
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusCreated {
 		err = parseRespError(resp.Body)
 		return twin, errors.Wrapf(err, "failed to create twin with status %s", resp.Status)
 	}
@@ -418,13 +418,10 @@ func (r *registrarGateway) getTwinByPubKey(url string, pk []byte) (result uint64
 		return result, errors.Wrapf(err, "failed to get account by public_key with status code %s", resp.Status)
 	}
 
-	res := struct {
-		Account types.Account `json:"account"`
-	}{}
+	var account types.Account
+	err = json.NewDecoder(resp.Body).Decode(&account)
 
-	err = json.NewDecoder(resp.Body).Decode(&res)
-
-	return res.Account.TwinID, err
+	return account.TwinID, err
 }
 
 func (r *registrarGateway) getZosVersion(url string) (string, error) {
@@ -454,7 +451,6 @@ func (r *registrarGateway) createNode(url string, node types.UpdateNodeRequest) 
 		return
 	}
 
-	log.Debug().Any("json body on create", body.String()).Any("UpdateNodeRequest", node).Send()
 	req, err := http.NewRequest("POST", url, &body)
 	if err != nil {
 		return
@@ -467,7 +463,7 @@ func (r *registrarGateway) createNode(url string, node types.UpdateNodeRequest) 
 		return 0, err
 	}
 
-	if resp == nil || resp.StatusCode != http.StatusOK {
+	if resp == nil || resp.StatusCode != http.StatusCreated {
 		err = parseRespError(resp.Body)
 		return 0, errors.Wrapf(err, "failed to update node on the registrar with status code %s", resp.Status)
 	}
@@ -631,7 +627,6 @@ func (r *registrarGateway) updateNode(url string, node types.UpdateNodeRequest) 
 		return 0, err
 	}
 
-	log.Debug().Any("json body on update", body.String()).Any("UpdateNodeRequest", node).Send()
 	req, err := http.NewRequest("PATCH", url, &body)
 	if err != nil {
 		return 0, err
@@ -676,7 +671,7 @@ func (r *registrarGateway) updateNodeUptimeV2(twinID uint64, url string, uptime 
 		return err
 	}
 
-	if resp == nil || resp.StatusCode != http.StatusOK {
+	if resp == nil || resp.StatusCode != http.StatusCreated {
 		err = parseRespError(resp.Body)
 		return errors.Wrap(err, "failed to send node up time report")
 	}
