@@ -7,7 +7,6 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	registrargw "github.com/threefoldtech/zos4/pkg/registrar_gateway"
 	"github.com/threefoldtech/zos4/pkg/types"
 	"github.com/threefoldtech/zosbase/pkg/crypto"
 	"github.com/threefoldtech/zosbase/pkg/identity/store"
@@ -82,44 +81,35 @@ func (d *identityManager) NodeID() zos4pkg.StrIdentifier {
 	return zos4pkg.StrIdentifier(d.key.Identity())
 }
 
-// NodeID returns the node identity
-// func (d *identityManager) Address() (pkg.Address, error) {
-// 	id, err := substrate.NewIdentityFromEd25519Key(d.key.PrivateKey)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return pkg.Address(id.Address()), nil
-// }
-
 func (d *identityManager) Farm() (name string, err error) {
 	if len(d.farm) != 0 {
 		return d.farm, nil
 	}
 
-	// we need to not use substrate
-	url := fmt.Sprintf("%s/v1/farms/%d", d.env.RegistrarURL, d.env.FarmID)
+	env := environment.MustGet()
 
+	url := fmt.Sprintf("%s/v1/farms/%d", env.RegistrarURL, env.FarmID)
 	resp, err := http.DefaultClient.Get(url)
 	if err != nil {
-		return
+		return "", err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return
+		return "", fmt.Errorf("failed to get farm with status code %s", resp.Status)
 	}
-
-	if resp.StatusCode == http.StatusNotFound {
-		return name, registrargw.ErrorRecordNotFound
-	}
-
 	defer resp.Body.Close()
 
-	var farm types.Farm
-	err = json.NewDecoder(resp.Body).Decode(&farm)
+	res := struct {
+		Farm types.Farm `json:"farm"`
+	}{}
+
+	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
-		return
+		return "", err
 	}
-	return farm.FarmName, nil
+
+	d.farm = res.Farm.FarmName
+	return res.Farm.FarmName, err
 }
 
 // FarmID returns the farm ID of the node or an error if no farm ID is configured
