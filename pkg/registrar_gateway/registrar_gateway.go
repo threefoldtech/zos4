@@ -437,11 +437,10 @@ func (r *registrarGateway) getZosVersion(url string) (string, error) {
 
 	defer resp.Body.Close()
 
-	var version types.ZosVersion
-
+	var version string
 	err = json.NewDecoder(resp.Body).Decode(&version)
 
-	return version.Version, err
+	return version, err
 }
 
 func (r *registrarGateway) createNode(url string, node types.UpdateNodeRequest) (nodeID uint64, err error) {
@@ -470,13 +469,10 @@ func (r *registrarGateway) createNode(url string, node types.UpdateNodeRequest) 
 
 	defer resp.Body.Close()
 
-	res := struct {
-		NodeID uint64 `json:"node_id"`
-	}{}
-	err = json.NewDecoder(resp.Body).Decode(&res)
+	err = json.NewDecoder(resp.Body).Decode(&nodeID)
 
-	r.nodeID = res.NodeID
-	return res.NodeID, err
+	r.nodeID = nodeID
+	return nodeID, err
 }
 
 func (r *registrarGateway) getFarm(url string) (farm types.Farm, err error) {
@@ -495,16 +491,11 @@ func (r *registrarGateway) getFarm(url string) (farm types.Farm, err error) {
 	}
 	defer resp.Body.Close()
 
-	res := struct {
-		Farm types.Farm `json:"farm"`
-	}{}
-
-	err = json.NewDecoder(resp.Body).Decode(&res)
+	err = json.NewDecoder(resp.Body).Decode(&farm)
 	if err != nil {
 		return farm, err
 	}
 
-	farm = res.Farm
 	return farm, err
 }
 
@@ -525,16 +516,12 @@ func (r *registrarGateway) getNode(url string) (node types.Node, err error) {
 
 	defer resp.Body.Close()
 
-	res := struct {
-		Node types.Node `json:"node"`
-	}{}
-
-	err = json.NewDecoder(resp.Body).Decode(&res)
+	err = json.NewDecoder(resp.Body).Decode(&node)
 	if err != nil {
 		return
 	}
 
-	return res.Node, err
+	return node, err
 }
 
 func (r *registrarGateway) getNodeByTwinID(url string, twin uint64) (result uint64, err error) {
@@ -567,18 +554,16 @@ func (r *registrarGateway) getNodeByTwinID(url string, twin uint64) (result uint
 
 	defer resp.Body.Close()
 
-	res := struct {
-		Nodes []types.Node `json:"nodes"`
-	}{}
-	err = json.NewDecoder(resp.Body).Decode(&res)
+	var nodes []types.Node
+	err = json.NewDecoder(resp.Body).Decode(&nodes)
 	if err != nil {
 		return
 	}
-	if len(res.Nodes) == 0 {
+	if len(nodes) == 0 {
 		return result, ErrorRecordNotFound
 	}
 
-	return res.Nodes[0].NodeID, nil
+	return nodes[0].NodeID, nil
 }
 
 func (r *registrarGateway) getNodesInFarm(url string, farmID uint32) (nodeIDs []uint32, err error) {
@@ -603,17 +588,13 @@ func (r *registrarGateway) getNodesInFarm(url string, farmID uint32) (nodeIDs []
 
 	defer resp.Body.Close()
 
-	// var nodes []types.Node
-	res := struct {
-		Nodes []types.Node `josn:"nodes"`
-	}{}
-
-	err = json.NewDecoder(resp.Body).Decode(&res)
+	var nodes []types.Node
+	err = json.NewDecoder(resp.Body).Decode(&nodes)
 	if err != nil {
 		return
 	}
 
-	for _, node := range res.Nodes {
+	for _, node := range nodes {
 		nodeIDs = append(nodeIDs, uint32(node.NodeID))
 	}
 

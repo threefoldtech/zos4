@@ -99,17 +99,14 @@ func (d *identityManager) Farm() (name string, err error) {
 	}
 	defer resp.Body.Close()
 
-	res := struct {
-		Farm types.Farm `json:"farm"`
-	}{}
-
-	err = json.NewDecoder(resp.Body).Decode(&res)
+	var farm types.Farm
+	err = json.NewDecoder(resp.Body).Decode(&farm)
 	if err != nil {
 		return "", err
 	}
 
-	d.farm = res.Farm.FarmName
-	return res.Farm.FarmName, err
+	d.farm = farm.FarmName
+	return farm.FarmName, err
 }
 
 // FarmID returns the farm ID of the node or an error if no farm ID is configured
