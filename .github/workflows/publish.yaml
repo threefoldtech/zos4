@@ -85,7 +85,7 @@ jobs:
 
       # only for main branch (devnet)
       # this basically releases this build to devnet
-      # TODO remove zos-light
+      # TODO remove register-nodes-in-registrar-server-test
       - name: Cross tagging (development)
         if: success() && (github.ref == 'refs/heads/main' ||  github.ref == 'refs/heads/register-nodes-in-registrar-server-test')
         uses: threefoldtech/publish-flist@master
