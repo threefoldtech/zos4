@@ -67,7 +67,7 @@ func NewRegistrarGateway(cl zbus.Client) (zos4Pkg.RegistrarGateway, error) {
 }
 
 func (r *registrarGateway) GetZosVersion() (string, error) {
-	url := fmt.Sprintf("%s/v1/nodes/%d/version", r.baseURL, r.nodeID)
+	url := fmt.Sprintf("%s/v1/zos/version", r.baseURL)
 	log.Debug().Str("url", url).Msg("requesting zos version")
 
 	return r.getZosVersion(url)
