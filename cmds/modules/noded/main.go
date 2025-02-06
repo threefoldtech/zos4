@@ -2,7 +2,6 @@ package noded
 
 import (
 	"context"
-	"crypto/ed25519"
 	"fmt"
 	"time"
 
@@ -10,7 +9,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 
-	substrate "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
+	registrar "github.com/threefoldtech/zos4/pkg/registrar_light"
+	zos4stubs "github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/app"
 	"github.com/threefoldtech/zosbase/pkg/capacity"
 	"github.com/threefoldtech/zosbase/pkg/environment"
@@ -21,7 +21,6 @@ import (
 	"github.com/threefoldtech/zosbase/pkg/perf/healthcheck"
 	"github.com/threefoldtech/zosbase/pkg/perf/iperf"
 	"github.com/threefoldtech/zosbase/pkg/perf/publicip"
-	registrar "github.com/threefoldtech/zosbase/pkg/registrar_light"
 	"github.com/threefoldtech/zosbase/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/utils"
 
@@ -59,7 +58,6 @@ var Module cli.Command = cli.Command{
 }
 
 func registerationServer(ctx context.Context, msgBrokerCon string, env environment.Environment, info registrar.RegistrationInfo) error {
-
 	redis, err := zbus.NewRedisClient(msgBrokerCon)
 	if err != nil {
 		return errors.Wrap(err, "fail to connect to message broker server")
@@ -71,7 +69,11 @@ func registerationServer(ctx context.Context, msgBrokerCon string, env environme
 	}
 
 	registrar := registrar.NewRegistrar(ctx, redis, env, info)
-	server.Register(zbus.ObjectID{Name: "registrar", Version: "0.0.1"}, registrar)
+	err = server.Register(zbus.ObjectID{Name: "registrar", Version: "0.0.1"}, registrar)
+	if err != nil {
+		return err
+	}
+
 	log.Debug().Msg("object registered")
 	if err := server.Run(ctx); err != nil && err != context.Canceled {
 		log.Fatal().Err(err).Msg("unexpected error exited registrar")
@@ -185,11 +187,12 @@ func action(cli *cli.Context) error {
 			time.Sleep(time.Minute * 5)
 		}
 	}
-	registrar := stubs.NewRegistrarStub(redis)
+	registrar := zos4stubs.NewRegistrarStub(redis)
 	var twin, node uint32
 	exp := backoff.NewExponentialBackOff()
 	exp.MaxInterval = 2 * time.Minute
 	bo := backoff.WithContext(exp, ctx)
+
 	err = backoff.RetryNotify(func() error {
 		var err error
 		node, err = registrar.NodeID(ctx)
@@ -205,6 +208,7 @@ func action(cli *cli.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get node id")
 	}
+
 	sub, err := environment.GetSubstrate()
 	if err != nil {
 		return err
@@ -230,18 +234,8 @@ func action(cli *cli.Context) error {
 	server.Register(zbus.ObjectID{Name: "system", Version: "0.0.1"}, system)
 	server.Register(zbus.ObjectID{Name: "performance-monitor", Version: "0.0.1"}, perfMon)
 
-	log.Info().Uint32("node", node).Uint32("twin", twin).Msg("node registered")
+	log.Info().Uint32("node", node).Uint32("twin", twin).Msg("node has been registered")
 
-	log.Info().Uint32("twin", twin).Msg("node has been registered")
-	idStub := stubs.NewIdentityManagerStub(redis)
-	fetchCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
-	sk := ed25519.PrivateKey(idStub.PrivateKey(fetchCtx))
-	id, err := substrate.NewIdentityFromEd25519Key(sk)
-	log.Info().Str("address", id.Address()).Msg("node address")
-	if err != nil {
-		return err
-	}
 	if err := server.Run(ctx); err != nil && err != context.Canceled {
 		log.Fatal().Err(err).Msg("unexpected error")
 	}

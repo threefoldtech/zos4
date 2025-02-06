@@ -20,8 +20,8 @@ import (
 	"github.com/cenkalti/backoff/v3"
 	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/zbus"
+	"github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/netlight/bootstrap"
-	"github.com/threefoldtech/zosbase/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/utils"
 )
 
@@ -58,7 +58,7 @@ var Module cli.Command = cli.Command{
 }
 
 func myceliumSeedFromIdentity(privKey []byte) []byte {
-	seed := x25519.PrivateKey(x25519.EdPrivateKeyToX25519([]byte(privKey)))
+	seed := x25519.PrivateKey(x25519.EdPrivateKeyToX25519(privKey))
 	return seed[:]
 }
 

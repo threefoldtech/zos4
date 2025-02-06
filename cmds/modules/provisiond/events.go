@@ -6,21 +6,21 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
+	"github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/events"
-	gridtypes "github.com/threefoldtech/zosbase/pkg/gridtypes"
-	provision "github.com/threefoldtech/zosbase/pkg/provision"
-	"github.com/threefoldtech/zosbase/pkg/stubs"
+	"github.com/threefoldtech/zosbase/pkg/gridtypes"
+	"github.com/threefoldtech/zosbase/pkg/provision"
 )
 
 type ContractEventHandler struct {
-	node             uint32
-	substrateGateway *stubs.SubstrateGatewayStub
+	node             uint64
+	registrarGateway *stubs.RegistrarGatewayStub
 	engine           provision.Engine
 	eventsConsumer   *events.RedisConsumer
 }
 
-func NewContractEventHandler(node uint32, substrateGateway *stubs.SubstrateGatewayStub, engine provision.Engine, events *events.RedisConsumer) ContractEventHandler {
-	return ContractEventHandler{node: node, substrateGateway: substrateGateway, engine: engine, eventsConsumer: events}
+func NewContractEventHandler(node uint64, registrarGateway *stubs.RegistrarGatewayStub, engine provision.Engine, events *events.RedisConsumer) ContractEventHandler {
+	return ContractEventHandler{node: node, registrarGateway: registrarGateway, engine: engine, eventsConsumer: events}
 }
 
 func (r *ContractEventHandler) current() (map[uint64]gridtypes.Deployment, error) {
@@ -46,7 +46,7 @@ func (r *ContractEventHandler) sync(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get current active contracts")
 	}
-	onchain, err := r.substrateGateway.GetNodeContracts(ctx, r.node)
+	onchain, err := r.registrarGateway.GetNodeContracts(ctx, uint32(r.node))
 	if err != nil {
 		return errors.Wrap(err, "failed to get active node contracts")
 	}
@@ -88,7 +88,7 @@ func (r *ContractEventHandler) sync(ctx context.Context) error {
 			Uint64("contract", id).
 			Logger()
 
-		contract, err := r.substrateGateway.GetContract(ctx, id)
+		contract, err := r.registrarGateway.GetContract(ctx, id)
 		if err.IsError() {
 			logger.Error().Err(err.Err).Msg("failed to get contract from chain")
 			continue

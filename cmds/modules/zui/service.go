@@ -7,6 +7,7 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 	"github.com/threefoldtech/zbus"
 
+	zos4stubs "github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/stubs"
 )
 
@@ -121,7 +122,7 @@ func serviceRender(ctx context.Context, client zbus.Client, grid *ui.Grid, rende
 }
 
 func getRegistrarStatus(ctx context.Context, client zbus.Client) string {
-	register := stubs.NewRegistrarStub(client)
+	register := zos4stubs.NewRegistrarStub(client)
 	if _, err := register.NodeID(ctx); err != nil {
 		if isInProgressError(err) {
 			return InProgressStatus
@@ -161,6 +162,6 @@ func getNodedStatus(ctx context.Context, client zbus.Client) {
 }
 
 func getPowerdStatus(ctx context.Context, client zbus.Client) {
-	powerd := stubs.NewIdentityManagerStub(client)
+	powerd := zos4stubs.NewIdentityManagerStub(client)
 	powerd.NodeID(ctx)
 }

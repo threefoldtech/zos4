@@ -8,9 +8,9 @@ import (
 	"github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	"github.com/rs/zerolog/log"
 	substrate "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
+	"github.com/threefoldtech/zos4/pkg/stubs"
 	gridtypes "github.com/threefoldtech/zosbase/pkg/gridtypes"
-	provision "github.com/threefoldtech/zosbase/pkg/provision"
-	"github.com/threefoldtech/zosbase/pkg/stubs"
+	"github.com/threefoldtech/zosbase/pkg/provision"
 )
 
 type DeploymentID struct {
@@ -19,14 +19,14 @@ type DeploymentID struct {
 }
 
 type CapacitySetter struct {
-	substrateGateway *stubs.SubstrateGatewayStub
+	registrarGateway *stubs.RegistrarGatewayStub
 	ch               chan DeploymentID
 	storage          provision.Storage
 }
 
-func NewCapacitySetter(substrateGateway *stubs.SubstrateGatewayStub, storage provision.Storage) CapacitySetter {
+func NewCapacitySetter(registrarGateway *stubs.RegistrarGatewayStub, storage provision.Storage) CapacitySetter {
 	return CapacitySetter{
-		substrateGateway: substrateGateway,
+		registrarGateway: registrarGateway,
 		storage:          storage,
 		ch:               make(chan DeploymentID, 215),
 	}
@@ -88,7 +88,7 @@ func (c *CapacitySetter) setWithClient(deployments ...gridtypes.Deployment) erro
 	)
 
 	return backoff.RetryNotify(func() error {
-		return c.substrateGateway.SetContractConsumption(context.Background(), caps...)
+		return c.registrarGateway.SetContractConsumption(context.Background(), caps...)
 	}, bo, func(err error, d time.Duration) {
 		log.Error().Err(err).Dur("retry-in", d).Msg("failed to set contract consumption")
 	})

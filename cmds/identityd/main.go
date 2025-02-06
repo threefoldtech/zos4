@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/app"
-	"github.com/threefoldtech/zosbase/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/upgrade"
 
-	"github.com/threefoldtech/zosbase/pkg"
+	"github.com/threefoldtech/zos4/pkg"
+	"github.com/threefoldtech/zos4/pkg/identity"
 	"github.com/threefoldtech/zosbase/pkg/environment"
-	"github.com/threefoldtech/zosbase/pkg/identity"
 
 	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/zbus"
@@ -47,10 +47,9 @@ func main() {
 		ver      bool
 		debug    bool
 
-		id      bool
-		net     bool
-		farm    bool
-		address bool
+		id   bool
+		net  bool
+		farm bool
 	)
 
 	flag.StringVar(&root, "root", "/var/cache/modules/identityd", "root working directory of the module")
@@ -61,7 +60,6 @@ func main() {
 	flag.BoolVar(&id, "id", false, "[deprecated] prints the node ID and exits")
 	flag.BoolVar(&net, "net", false, "prints the node network and exits")
 	flag.BoolVar(&farm, "farm", false, "prints the node farm id and exits")
-	flag.BoolVar(&address, "address", false, "prints the node ss58 address and exits")
 
 	flag.Parse()
 	if ver {
@@ -78,22 +76,14 @@ func main() {
 		env := environment.MustGet()
 		fmt.Println(env.RunningMode.String())
 		os.Exit(0)
-	} else if id || address {
+	} else if id {
 		ctx := context.Background()
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to connect to zbus")
 		}
 		stub := stubs.NewIdentityManagerStub(client)
+		fmt.Println(stub.NodeID(ctx))
 
-		if id {
-			fmt.Println(stub.NodeID(ctx))
-		} else { // address
-			add, err := stub.Address(ctx)
-			if err != nil {
-				log.Fatal().Err(err).Msg("failed to get node address")
-			}
-			fmt.Println(add)
-		}
 		os.Exit(0)
 	}
 

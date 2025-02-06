@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	substrate "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
 	"github.com/threefoldtech/zbus"
+	zos4stubs "github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg"
 	gridtypes "github.com/threefoldtech/zosbase/pkg/gridtypes"
 	"github.com/threefoldtech/zosbase/pkg/rrd"
@@ -35,7 +36,7 @@ type Reporter struct {
 
 	identity         substrate.Identity
 	queue            *dque.DQue
-	substrateGateway *stubs.SubstrateGatewayStub
+	registrarGateway *zos4stubs.RegistrarGatewayStub
 }
 
 func reportBuilder() interface{} {
@@ -57,7 +58,7 @@ func ReportChecks(metricsPath string) error {
 
 // NewReporter creates a new capacity reporter
 func NewReporter(metricsPath string, cl zbus.Client, root string) (*Reporter, error) {
-	idMgr := stubs.NewIdentityManagerStub(cl)
+	idMgr := zos4stubs.NewIdentityManagerStub(cl)
 	sk := ed25519.PrivateKey(idMgr.PrivateKey(context.TODO()))
 	id, err := substrate.NewIdentityFromEd25519Key(sk)
 	if err != nil {
@@ -79,7 +80,7 @@ func NewReporter(metricsPath string, cl zbus.Client, root string) (*Reporter, er
 		return nil, errors.Wrap(err, "failed to setup report persisted queue")
 	}
 
-	substrateGateway := stubs.NewSubstrateGatewayStub(cl)
+	registrarGateway := zos4stubs.NewRegistrarGatewayStub(cl)
 
 	rrd, err := rrd.NewRRDBolt(metricsPath, 5*time.Minute, 24*time.Hour)
 	if err != nil {
@@ -91,7 +92,7 @@ func NewReporter(metricsPath string, cl zbus.Client, root string) (*Reporter, er
 		rrd:              rrd,
 		identity:         id,
 		queue:            queue,
-		substrateGateway: substrateGateway,
+		registrarGateway: registrarGateway,
 	}, nil
 }
 
@@ -105,7 +106,7 @@ func (r *Reporter) pushOne() error {
 
 	log.Info().Int("len", len(report.Consumption)).Msgf("sending capacity report")
 
-	hash, err := r.substrateGateway.Report(context.Background(), report.Consumption)
+	hash, err := r.registrarGateway.Report(context.Background(), report.Consumption)
 	if err != nil {
 		return errors.Wrap(err, "failed to publish consumption report")
 	}

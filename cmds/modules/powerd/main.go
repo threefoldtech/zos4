@@ -8,9 +8,10 @@ import (
 	"github.com/rs/zerolog/log"
 	substrate "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
 	"github.com/threefoldtech/zbus"
+	"github.com/threefoldtech/zos4/pkg/power"
+	zos4stub "github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/environment"
 	"github.com/threefoldtech/zosbase/pkg/events"
-	"github.com/threefoldtech/zosbase/pkg/power"
 	"github.com/threefoldtech/zosbase/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/utils"
 	"github.com/urfave/cli/v2"
@@ -58,15 +59,15 @@ func action(cli *cli.Context) error {
 		log.Info().Err(zuiErr).Send()
 	}
 
-	identity := stubs.NewIdentityManagerStub(cl)
-	register := stubs.NewRegistrarStub(cl)
+	identity := zos4stub.NewIdentityManagerStub(cl)
+	register := zos4stub.NewRegistrarStub(cl)
 
 	nodeID, err := register.NodeID(ctx)
 	if err != nil {
 		if zuiErr := zui.PushErrors(cli.Context, powerdLabel, []string{err.Error()}); zuiErr != nil {
 			log.Info().Err(zuiErr).Send()
 		}
-		return errors.Wrap(err, "failed to get node id")
+		return errors.Wrap(err, "failed to get node id from powerd")
 	}
 
 	twinID, err := register.TwinID(ctx)
@@ -79,14 +80,14 @@ func action(cli *cli.Context) error {
 
 	sk := ed25519.PrivateKey(identity.PrivateKey(ctx))
 	id, err := substrate.NewIdentityFromEd25519Key(sk)
-	log.Info().Str("address", id.Address()).Msg("node address")
+	log.Info().Str("public key", string(id.PublicKey())).Msg("node public key")
 	if err != nil {
 		return err
 	}
 
-	substrateGateway := stubs.NewSubstrateGatewayStub(cl)
+	registrarGateway := zos4stub.NewRegistrarGatewayStub(cl)
 
-	uptime, err := power.NewUptime(substrateGateway, id)
+	uptime, err := power.NewUptime(registrarGateway)
 	if err != nil {
 		return errors.Wrap(err, "failed to initialize uptime reported")
 	}
@@ -114,7 +115,7 @@ func action(cli *cli.Context) error {
 	}
 
 	// start power manager
-	power, err := power.NewPowerServer(substrateGateway, consumer, enabled, env.FarmID, nodeID, twinID, uptime)
+	power, err := power.NewPowerServer(registrarGateway, consumer, enabled, env.FarmID, nodeID, twinID, uptime)
 	if err != nil {
 		return errors.Wrap(err, "failed to initialize power manager")
 	}
