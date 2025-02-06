@@ -9,8 +9,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/threefoldtech/zos4/pkg/stubs"
+	"github.com/threefoldtech/zos4/pkg/upgrade"
 	"github.com/threefoldtech/zosbase/pkg/app"
-	"github.com/threefoldtech/zosbase/pkg/upgrade"
 
 	"github.com/threefoldtech/zos4/pkg"
 	"github.com/threefoldtech/zos4/pkg/identity"

@@ -11,7 +11,7 @@ type UpdateNodeRequest struct {
 	FarmID       uint64      `json:"farm_id" binding:"required,min=1"`
 	Resources    Resources   `json:"resources" binding:"required"`
 	Location     Location    `json:"location" binding:"required"`
-	Interfaces   []Interface `json:"interfaces" binding:"required`
+	Interfaces   []Interface `json:"interfaces" binding:"required"`
 	SecureBoot   bool        `json:"secure_boot"`
 	Virtualized  bool        `json:"virtualized"`
 	SerialNumber string      `json:"serial_number" binding:"required"`
