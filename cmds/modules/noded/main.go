@@ -234,9 +234,7 @@ func action(cli *cli.Context) error {
 	server.Register(zbus.ObjectID{Name: "system", Version: "0.0.1"}, system)
 	server.Register(zbus.ObjectID{Name: "performance-monitor", Version: "0.0.1"}, perfMon)
 
-	log.Info().Uint32("node", node).Uint32("twin", twin).Msg("node registered")
-
-	log.Info().Uint32("twin", twin).Msg("node has been registered")
+	log.Info().Uint32("node", node).Uint32("twin", twin).Msg("node has been registered")
 
 	if err := server.Run(ctx); err != nil && err != context.Canceled {
 		log.Fatal().Err(err).Msg("unexpected error")
