@@ -50,7 +50,7 @@ jobs:
           user: tf-autobuilder
           token: ${{ secrets.HUB_JWT }}
           name: ${{ steps.setname.outputs.build }}
-          target: bootstrap-v4:development.flist
+          target: bootstrap:development.flist
       - name: Symlink flist (release)
         if: success() && github.ref == 'refs/heads/main'
         uses: threefoldtech/publish-flist@master
@@ -60,4 +60,4 @@ jobs:
           user: tf-autobuilder
           token: ${{ secrets.HUB_JWT }}
           name: ${{ steps.setname.outputs.build }}
-          target: bootstrap-v4:latest.flist
+          target: bootstrap:latest.flist
