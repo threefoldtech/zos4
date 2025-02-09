@@ -152,7 +152,7 @@ fn install_package(flist: &hub::Flist) -> Result<()> {
 
     debug!("zfs started, now copying all files");
 
-    fs.copy("/");
+    fs.copy("/").context("failed to copy files")?;
 
     debug!("starting services");
     run_all(&fs)
