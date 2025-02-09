@@ -39,7 +39,7 @@ jobs:
           baseurl: "https://v4.hub.grid.tf"
           user: tf-autobuilder
           root: archive
-          token: ${{ secrets.HUB_JWT }}
+          threefold: ${{ secrets.token }}
           name: ${{ steps.setname.outputs.build }}
       - name: Symlink flist (development)
         if: success()
