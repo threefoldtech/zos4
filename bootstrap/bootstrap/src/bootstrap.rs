@@ -14,7 +14,7 @@ use retry;
 const ZOS_REPO: &str = "tf-zos";
 
 const FLIST_TAG_FILE: &str = "/tmp/tag.info";
-const BOOTSTAP_FLIST: &str = "bootstrap:latest.flist";
+const BOOTSTAP_FLIST: &str = "bootstrap-v4:latest.flist";
 
 const WORKDIR: &str = "/tmp/bootstrap";
 
