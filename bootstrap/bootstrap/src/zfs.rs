@@ -21,7 +21,7 @@ impl Zfs {
         let mut child = Command::new("g8ufs")
             .arg("--ro")
             .arg("--storage-url")
-            .arg("redis://hub.grid.tf:9940")
+            .arg("redis://v4.hub.grid.tf:9940")
             .arg("--cache")
             .arg(backend.as_ref())
             .arg("--meta")
