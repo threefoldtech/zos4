@@ -61,16 +61,20 @@ type RegistrarVersion struct {
 }
 
 func getRolloutConfig(ctx context.Context, gw *stubs.RegistrarGatewayStub) (RegistrarVersion, []uint32, error) {
+	env := environment.MustGet()
 	config, err := environment.GetConfig()
 	if err != nil {
 		return RegistrarVersion{}, nil, errors.Wrap(err, "failed to get network config")
 	}
 
-	v, err := gw.GetZosVersion(ctx)
-	if err != nil {
-		return RegistrarVersion{}, nil, errors.Wrap(err, "failed to get zos version from registrar")
+	// if we are on devnet just update we don't need to update the version throught out the registrar
+	v := "0.0.0"
+	if env.RunningMode != environment.RunningDev {
+		v, err = gw.GetZosVersion(ctx)
+		if err != nil {
+			return RegistrarVersion{}, nil, errors.Wrap(err, "failed to get zos version from registrar")
+		}
 	}
-
 	var registrarVersion RegistrarVersion
 	err = json.Unmarshal([]byte(v), &registrarVersion)
 	if err != nil {
