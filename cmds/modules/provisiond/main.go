@@ -31,7 +31,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/threefoldtech/zbus"
-	provision "github.com/threefoldtech/zos4/pkg/provision"
+	"github.com/threefoldtech/zos4/pkg/provision"
 )
 
 const (
