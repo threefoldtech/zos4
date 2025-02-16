@@ -30,4 +30,4 @@ jobs:
           action: crosstag
           user: tf-zos
           name: ${{ github.event.inputs.grid }}
-          target: tf-autobuilder/tags/${{ github.event.inputs.version }}
+          target: tf-autobuilder/${{ github.event.inputs.version }}
