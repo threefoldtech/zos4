@@ -30,4 +30,4 @@ jobs:
           action: crosslink
           user: tf-zos
           name: ${{ github.event.inputs.grid }}
-          target: tf-autobuilder/zos:${{ github.event.inputs.version }}.flist
+          target: tf-autobuilder/tag/${{ github.event.inputs.version }}
