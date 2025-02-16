@@ -24,7 +24,7 @@ jobs:
       - name: Symlink flist (development)
         uses: threefoldtech/publish-flist@master
         with:
-          token: ${{ secrets.HUB_JWT }}
+          token: ${{ secrets.HUB_AUTOMATION_TOKEN }}
           baseurl: "https://v4.hub.grid.tf"
           backend: "v4.hub.grid.tf:9941"
           action: crosslink
