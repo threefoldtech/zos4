@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -437,10 +438,26 @@ func (r *registrarGateway) getZosVersion(url string) (string, error) {
 
 	defer resp.Body.Close()
 
-	var version string
-	err = json.NewDecoder(resp.Body).Decode(&version)
+	var versionString string
+	err = json.NewDecoder(resp.Body).Decode(&versionString)
+	if err != nil {
+		return "", err
+	}
 
-	return version, err
+	versionBytes, err := base64.StdEncoding.DecodeString(versionString)
+	if err != nil {
+		return "", err
+	}
+
+	correctedJSON := strings.ReplaceAll(string(versionBytes), "'", "\"")
+
+	var version types.ZosVersion
+	err = json.NewDecoder(strings.NewReader(correctedJSON)).Decode(&version)
+	if err != nil {
+		return "", err
+	}
+
+	return version.Version, err
 }
 
 func (r *registrarGateway) createNode(url string, node types.UpdateNodeRequest) (nodeID uint64, err error) {

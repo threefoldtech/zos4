@@ -81,7 +81,8 @@ type UptimeReport struct {
 }
 
 type ZosVersion struct {
-	Version string `json:"version"`
+	Version       string `json:"version"`
+	SafeToUpgrade bool   `json:"safe_to_upgrade"`
 }
 
 type Interface struct {
