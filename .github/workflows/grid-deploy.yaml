@@ -27,7 +27,7 @@ jobs:
           token: ${{ secrets.HUB_AUTOMATION_TOKEN }}
           baseurl: "https://v4.hub.grid.tf"
           backend: "v4.hub.grid.tf:9941"
-          action: crosslink
+          action: crosstag
           user: tf-zos
           name: ${{ github.event.inputs.grid }}
           target: tf-autobuilder/tags/${{ github.event.inputs.version }}
