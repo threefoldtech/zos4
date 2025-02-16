@@ -9,9 +9,9 @@ on:
         default: "qa"
         type: choice
         options:
-          - qa
-          - testing
-          - production
+          - qa-v4
+          - testing-v4
+          - production-v4
       version:
         description: "version to release"
         required: true
@@ -25,8 +25,8 @@ jobs:
         uses: threefoldtech/publish-flist@master
         with:
           token: ${{ secrets.HUB_JWT }}
-          baseurl: 'https://v4.hub.grid.tf'
+          baseurl: "https://v4.hub.grid.tf"
           action: crosslink
           user: tf-zos
-          name: zos:${{ github.event.inputs.grid }}-3:latest.flist
+          name: ${{ github.event.inputs.grid }}
           target: tf-autobuilder/zos:${{ github.event.inputs.version }}.flist
