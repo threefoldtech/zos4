@@ -68,7 +68,7 @@ func getRolloutConfig(ctx context.Context, gw *stubs.RegistrarGatewayStub) (Regi
 	}
 
 	// if we are on devnet just update we don't need to update the version throught out the registrar
-	v := "0.0.0"
+	v := "v0.0.0"
 	if env.RunningMode != environment.RunningDev {
 		v, err = gw.GetZosVersion(ctx)
 		if err != nil {

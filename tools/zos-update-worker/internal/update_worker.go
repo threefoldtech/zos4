@@ -61,17 +61,16 @@ func (r RegistrarClient) GetZosVersion() (RegistrarVersion, error) {
 		return RegistrarVersion{}, fmt.Errorf("failed to get version %s with status code %s", url, resp.Status)
 	}
 	defer resp.Body.Close()
-	fmt.Println(string(body))
-	fmt.Println(body[0])
 	jsonVersion, err := base64.StdEncoding.DecodeString(strings.Trim(string(body), "\""))
 	if err != nil {
-		return RegistrarVersion{}, err
+		return RegistrarVersion{}, fmt.Errorf("failed to decode version %w", err)
 	}
+	correctedJSON := strings.ReplaceAll(string(jsonVersion), "'", "\"")
 	var version RegistrarVersion
-	err = json.Unmarshal(jsonVersion, &version)
+	err = json.Unmarshal([]byte(correctedJSON), &version)
 	// err = json.NewDecoder(resp.Body).Decode(&version)
 	if err != nil {
-		return RegistrarVersion{}, err
+		return RegistrarVersion{}, fmt.Errorf("failed to unmarshal version %w", err)
 	}
 
 	return version, nil
@@ -178,6 +177,9 @@ func (w *Worker) updateZosVersion(network Network, regClient RegistrarClient) er
 	zosLink := fmt.Sprintf("%v/.tag-%v", path, regVersion.Version)
 
 	// update links zos
+	fmt.Println(zosCurrent)
+	fmt.Println(zosLatest)
+	fmt.Println(zosLink)
 	return w.updateLink(zosCurrent, zosLatest, zosLink)
 }
 
