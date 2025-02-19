@@ -19,9 +19,9 @@ import (
 type Network string
 
 var (
-	MainNetwork Network = "production"
-	TestNetwork Network = "testing"
-	QANetwork   Network = "qa"
+	MainNetwork Network = "production-v4"
+	TestNetwork Network = "testing-v4"
+	QANetwork   Network = "qa-v4"
 )
 
 type Params struct {
