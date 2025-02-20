@@ -178,6 +178,11 @@ func (r *registrarGateway) GetNodes(farmID uint32) (nodeIDs []uint32, err error)
 func (r *registrarGateway) GetPowerTarget() (power substrate.NodePower, err error) {
 	// log.Trace().Str("method", "GetPowerTarget").Uint32("node id", uint32(g.nodeID)).Msg("method called")
 	// return g.sub.GetPowerTarget(uint32(g.nodeID))
+	power = substrate.NodePower{
+		State:  substrate.PowerState{IsUp: true},
+		Target: substrate.Power{IsUp: true},
+	}
+
 	return
 }
 
