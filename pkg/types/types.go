@@ -51,8 +51,6 @@ type Farm struct {
 	FarmName  string `json:"farm_name"`
 	TwinID    uint64 `json:"twin_id"` // Farmer account reference
 	Dedicated bool   `json:"dedicated"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
 }
 
 type Node struct {
