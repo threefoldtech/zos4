@@ -390,6 +390,7 @@ func (r *registrarGateway) getTwin(url string, twinID uint64) (result types.Acco
 	defer resp.Body.Close()
 
 	err = json.NewDecoder(resp.Body).Decode(&result)
+
 	return result, err
 }
 
@@ -427,6 +428,9 @@ func (r *registrarGateway) getTwinByPubKey(url string, pk []byte) (result uint64
 	var account types.Account
 	err = json.NewDecoder(resp.Body).Decode(&account)
 
+	if r.twinID == 0 {
+		r.twinID = account.TwinID
+	}
 	return account.TwinID, err
 }
 
@@ -491,10 +495,13 @@ func (r *registrarGateway) createNode(url string, node types.UpdateNodeRequest) 
 
 	defer resp.Body.Close()
 
-	err = json.NewDecoder(resp.Body).Decode(&nodeID)
+	result := struct {
+		NodeID uint64 `json:"node_id"`
+	}{}
+	err = json.NewDecoder(resp.Body).Decode(&result)
 
-	r.nodeID = nodeID
-	return nodeID, err
+	r.nodeID = result.NodeID
+	return result.NodeID, err
 }
 
 func (r *registrarGateway) getFarm(url string) (farm types.Farm, err error) {
@@ -543,6 +550,9 @@ func (r *registrarGateway) getNode(url string) (node types.Node, err error) {
 		return
 	}
 
+	if r.nodeID == 0 {
+		r.nodeID = node.NodeID
+	}
 	return node, err
 }
 
@@ -585,6 +595,9 @@ func (r *registrarGateway) getNodeByTwinID(url string, twin uint64) (result uint
 		return result, ErrorRecordNotFound
 	}
 
+	if r.nodeID == 0 {
+		r.nodeID = nodes[0].NodeID
+	}
 	return nodes[0].NodeID, nil
 }
 
