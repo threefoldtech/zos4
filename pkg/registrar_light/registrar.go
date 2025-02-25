@@ -2,7 +2,6 @@ package registrar
 
 import (
 	"context"
-	"crypto/ed25519"
 	"os"
 	"sync"
 	"time"
@@ -160,13 +159,9 @@ func (r *Registrar) register(ctx context.Context, cl zbus.Client, env environmen
 }
 
 func (r *Registrar) reActivate(ctx context.Context, cl zbus.Client) error {
+	env := environment.MustGet()
 	registrarGateway := zos4stubs.NewRegistrarGatewayStub(cl)
-	identityManager := zos4stubs.NewIdentityManagerStub(cl)
-
-	sk := ed25519.PrivateKey(identityManager.PrivateKey(ctx))
-	pubKey := sk.Public().(ed25519.PublicKey)
-
-	_, err := registrarGateway.EnsureAccount(ctx, pubKey)
+	_, err := registrarGateway.EnsureAccount(ctx, env.RelayURL, "")
 
 	return err
 }

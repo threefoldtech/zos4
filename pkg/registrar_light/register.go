@@ -2,7 +2,6 @@ package registrar
 
 import (
 	"context"
-	"crypto/ed25519"
 	"fmt"
 	"reflect"
 	"strings"
@@ -10,8 +9,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
+	"github.com/threefoldtech/tfgrid4-sdk-go/node-registrar/client"
 	"github.com/threefoldtech/zbus"
-	registrargw "github.com/threefoldtech/zos4/pkg/registrar_gateway"
 	zos4Stubs "github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zos4/pkg/types"
 	"github.com/threefoldtech/zosbase/pkg/environment"
@@ -111,7 +110,7 @@ func registerNode(
 		return 0, 0, errors.Wrap(err, "failed to get zos bridge information")
 	}
 
-	interfaces := types.Interface{
+	interfaces := []client.Interface{{
 		Name: infs.Interfaces["zos"].Name,
 		Mac:  infs.Interfaces["zos"].Mac,
 		IPs: func() string {
@@ -121,16 +120,16 @@ func registerNode(
 			}
 			return strings.Join(ips, "/")
 		}(),
-	}
+	}}
 
-	resources := types.Resources{
+	resources := client.Resources{
 		HRU: uint64(info.Capacity.HRU),
 		SRU: uint64(info.Capacity.SRU),
 		CRU: info.Capacity.CRU,
 		MRU: uint64(info.Capacity.MRU),
 	}
 
-	location := types.Location{
+	location := client.Location{
 		Longitude: fmt.Sprint(info.Location.Longitude),
 		Latitude:  fmt.Sprint(info.Location.Latitude),
 		Country:   info.Location.Country,
@@ -139,10 +138,7 @@ func registerNode(
 
 	log.Info().Str("id", mgr.NodeID(ctx).Identity()).Msg("start registration of the node on zos4 registrar")
 
-	sk := ed25519.PrivateKey(mgr.PrivateKey(ctx))
-	pubKey := sk.Public().(ed25519.PublicKey)
-
-	account, err := registrarGateway.EnsureAccount(ctx, pubKey)
+	account, err := registrarGateway.EnsureAccount(ctx, env.RelayURL, "")
 	if err != nil {
 		log.Info().Msg("failed to EnsureAccount")
 		return 0, 0, errors.Wrap(err, "failed to ensure account")
@@ -151,12 +147,12 @@ func registerNode(
 
 	serial := info.SerialNumber
 
-	real := types.Node{
+	real := client.Node{
 		FarmID:       uint64(env.FarmID),
 		TwinID:       twinID,
 		Resources:    resources,
 		Location:     location,
-		Interfaces:   []types.Interface{interfaces},
+		Interfaces:   interfaces,
 		SecureBoot:   info.SecureBoot,
 		Virtualized:  info.Virtualized,
 		SerialNumber: serial,
@@ -173,12 +169,13 @@ func registerNode(
 		SerialNumber: real.SerialNumber,
 	}
 
-	nodeID, regErr := registrarGateway.GetNodeByTwinID(ctx, twinID)
+	node, regErr := registrarGateway.GetNodeByTwinID(ctx, twinID)
+	nodeID = node.NodeID
 	if regErr != nil {
-		if strings.Contains(regErr.Error(), registrargw.ErrorRecordNotFound.Error()) {
+		if strings.Contains(regErr.Error(), client.ErrorNodeNotFround.Error()) {
 			nodeID, err = registrarGateway.CreateNode(ctx, req)
 			if err != nil {
-				return 0, 0, errors.Wrap(err, "failed to create node on chain")
+				return 0, 0, errors.Wrap(err, "failed to create node on registrar")
 			}
 		} else {
 			return 0, 0, errors.Wrapf(regErr, "failed to get node information for twin id: %d", twinID)
@@ -186,14 +183,14 @@ func registerNode(
 	}
 
 	// node exists
-	var onChain types.Node
-	onChain, err = registrarGateway.GetNode(ctx, nodeID)
+	var onRegistrar client.Node
+	onRegistrar, err = registrarGateway.GetNode(ctx, nodeID)
 	if err != nil {
 		return 0, 0, errors.Wrapf(err, "failed to get node with id: %d", nodeID)
 	}
 
-	// ignore virt-what value if the node is marked as real on the chain
-	if !onChain.Virtualized {
+	// ignore virt-what value if the node is marked as real on the registrar
+	if !onRegistrar.Virtualized {
 		real.Virtualized = false
 	}
 
@@ -203,9 +200,9 @@ func registerNode(
 	// otherwise we update the node
 	log.Debug().Uint64("node", nodeID).Msg("node already found on registrar")
 
-	if !reflect.DeepEqual(real, onChain) {
-		log.Debug().Msgf("node data have changed, issuing an update node real: %+v\nonchain: %+v", real, onChain)
-		_, err := registrarGateway.UpdateNode(ctx, req)
+	if !reflect.DeepEqual(real, onRegistrar) {
+		log.Debug().Msgf("node data have changed, issuing an update node real: %+v\nonRegistrar: %+v", real, onRegistrar)
+		err := registrarGateway.UpdateNode(ctx, req)
 		if err != nil {
 			return 0, 0, errors.Wrapf(err, "failed to update node data with id: %d", nodeID)
 		}

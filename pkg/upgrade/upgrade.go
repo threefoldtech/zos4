@@ -2,7 +2,6 @@ package upgrade
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"math/rand"
@@ -20,6 +19,7 @@ import (
 	"github.com/threefoldtech/0-fs/meta"
 	"github.com/threefoldtech/0-fs/rofs"
 	"github.com/threefoldtech/0-fs/storage"
+	"github.com/threefoldtech/tfgrid4-sdk-go/node-registrar/client"
 	"github.com/threefoldtech/zbus"
 	"github.com/threefoldtech/zos4/pkg/stubs"
 	"github.com/threefoldtech/zosbase/pkg/app"
@@ -55,37 +55,23 @@ const (
 	ZosPackage = "zos.flist"
 )
 
-type RegistrarVersion struct {
-	SafeToUpgrade bool   `json:"safe_to_upgrade"`
-	Version       string `json:"version"`
-}
-
-func getRolloutConfig(ctx context.Context, gw *stubs.RegistrarGatewayStub) (RegistrarVersion, []uint32, error) {
+func getRolloutConfig(ctx context.Context, gw *stubs.RegistrarGatewayStub) (client.ZosVersion, []uint32, error) {
 	env := environment.MustGet()
 	config, err := environment.GetConfig()
 	if err != nil {
-		return RegistrarVersion{}, nil, errors.Wrap(err, "failed to get network config")
+		return client.ZosVersion{}, nil, errors.Wrap(err, "failed to get network config")
 	}
 
 	// if we are on devnet just update we don't need to update the version throught out the registrar
-	v := "v0.0.0"
+	v := client.ZosVersion{Version: "v0.0.0", SafeToUpgrade: true}
 	if env.RunningMode != environment.RunningDev {
 		v, err = gw.GetZosVersion(ctx)
 		if err != nil {
-			return RegistrarVersion{}, nil, errors.Wrap(err, "failed to get zos version from registrar")
-		}
-	}
-	var registrarVersion RegistrarVersion
-	err = json.Unmarshal([]byte(v), &registrarVersion)
-	if err != nil {
-		log.Debug().Err(err).Msg("failed to unmarshal chain version and safe to upgrade flag")
-		registrarVersion = RegistrarVersion{
-			SafeToUpgrade: true,
-			Version:       v,
+			return client.ZosVersion{}, nil, errors.Wrap(err, "failed to get zos version from registrar")
 		}
 	}
 
-	return registrarVersion, config.RolloutUpgrade.TestFarms, nil
+	return v, config.RolloutUpgrade.TestFarms, nil
 }
 
 // Upgrader is the component that is responsible
