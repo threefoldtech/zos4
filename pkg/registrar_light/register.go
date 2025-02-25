@@ -12,7 +12,6 @@ import (
 	"github.com/threefoldtech/tfgrid4-sdk-go/node-registrar/client"
 	"github.com/threefoldtech/zbus"
 	zos4Stubs "github.com/threefoldtech/zos4/pkg/stubs"
-	"github.com/threefoldtech/zos4/pkg/types"
 	"github.com/threefoldtech/zosbase/pkg/environment"
 	"github.com/threefoldtech/zosbase/pkg/geoip"
 	gridtypes "github.com/threefoldtech/zosbase/pkg/gridtypes"
@@ -158,22 +157,11 @@ func registerNode(
 		SerialNumber: serial,
 	}
 
-	req := types.UpdateNodeRequest{
-		TwinID:       real.TwinID,
-		FarmID:       real.FarmID,
-		Resources:    real.Resources,
-		Location:     real.Location,
-		Interfaces:   real.Interfaces,
-		SecureBoot:   real.SecureBoot,
-		Virtualized:  real.Virtualized,
-		SerialNumber: real.SerialNumber,
-	}
-
 	node, regErr := registrarGateway.GetNodeByTwinID(ctx, twinID)
 	nodeID = node.NodeID
 	if regErr != nil {
 		if strings.Contains(regErr.Error(), client.ErrorNodeNotFround.Error()) {
-			nodeID, err = registrarGateway.CreateNode(ctx, req)
+			nodeID, err = registrarGateway.CreateNode(ctx, real)
 			if err != nil {
 				return 0, 0, errors.Wrap(err, "failed to create node on registrar")
 			}
@@ -202,7 +190,7 @@ func registerNode(
 
 	if !reflect.DeepEqual(real, onRegistrar) {
 		log.Debug().Msgf("node data have changed, issuing an update node real: %+v\nonRegistrar: %+v", real, onRegistrar)
-		err := registrarGateway.UpdateNode(ctx, req)
+		err := registrarGateway.UpdateNode(ctx, real)
 		if err != nil {
 			return 0, 0, errors.Wrapf(err, "failed to update node data with id: %d", nodeID)
 		}

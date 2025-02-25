@@ -6,7 +6,6 @@ import (
 	substrateTypes "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	substrate "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
 	"github.com/threefoldtech/tfgrid4-sdk-go/node-registrar/client"
-	"github.com/threefoldtech/zos4/pkg/types"
 	"github.com/threefoldtech/zosbase/pkg"
 )
 
@@ -18,11 +17,11 @@ type RegistrarGateway interface {
 	GetTwin(id uint64) (client.Account, error)
 	GetTwinByPubKey(pk []byte) (uint64, error)
 
-	CreateNode(node types.UpdateNodeRequest) (uint64, error)
+	CreateNode(node client.Node) (uint64, error)
 	GetNode(id uint64) (client.Node, error)
 	GetNodes(farmID uint64) ([]uint64, error)
 	GetNodeByTwinID(twin uint64) (client.Node, error)
-	UpdateNode(node types.UpdateNodeRequest) error
+	UpdateNode(node client.Node) error
 	UpdateNodeUptimeV2(uptime time.Duration, timestamp time.Time) (err error)
 
 	GetFarm(id uint64) (client.Farm, error)

@@ -17,7 +17,6 @@ import (
 	"github.com/threefoldtech/zbus"
 	zos4Pkg "github.com/threefoldtech/zos4/pkg"
 	"github.com/threefoldtech/zos4/pkg/stubs"
-	"github.com/threefoldtech/zos4/pkg/types"
 	"github.com/threefoldtech/zosbase/pkg"
 	"github.com/threefoldtech/zosbase/pkg/environment"
 )
@@ -62,7 +61,7 @@ func (r *registrarGateway) GetZosVersion() (client.ZosVersion, error) {
 	return r.registrarClient.GetZosVersion()
 }
 
-func (r *registrarGateway) CreateNode(node types.UpdateNodeRequest) (uint64, error) {
+func (r *registrarGateway) CreateNode(node client.Node) (uint64, error) {
 	log.Debug().
 		Str("method", "CreateNode").
 		Uint32("farm_id", uint32(node.FarmID)).
@@ -162,7 +161,7 @@ func (r *registrarGateway) GetTwinByPubKey(pk []byte) (result uint64, err error)
 	return account.TwinID, err
 }
 
-func (r *registrarGateway) UpdateNode(node types.UpdateNodeRequest) error {
+func (r *registrarGateway) UpdateNode(node client.Node) error {
 	log.Debug().
 		Str("method", "UpdateNode").
 		Uint64("twin_id", node.TwinID).
