@@ -177,9 +177,6 @@ func (w *Worker) updateZosVersion(network Network, regClient RegistrarClient) er
 	zosLink := fmt.Sprintf("%v/.tag-%v", path, regVersion.Version)
 
 	// update links zos
-	fmt.Println(zosCurrent)
-	fmt.Println(zosLatest)
-	fmt.Println(zosLink)
 	return w.updateLink(zosCurrent, zosLatest, zosLink)
 }
 
