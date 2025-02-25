@@ -49,7 +49,6 @@ require (
 
 require (
 	github.com/hashicorp/go-retryablehttp v0.7.7
-	github.com/lib/pq v1.10.9
 	github.com/threefoldtech/tfgrid4-sdk-go/node-registrar v0.0.0-20250225100246-f4f5e1fbff97
 )
 
