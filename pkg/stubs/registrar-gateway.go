@@ -6,11 +6,10 @@ package stubs
 
 import (
 	"context"
-	types1 "github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	types "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	tfchainclientgo "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
 	client "github.com/threefoldtech/tfgrid4-sdk-go/node-registrar/client"
 	zbus "github.com/threefoldtech/zbus"
-	types "github.com/threefoldtech/zos4/pkg/types"
 	pkg "github.com/threefoldtech/zosbase/pkg"
 	"time"
 )
@@ -32,7 +31,7 @@ func NewRegistrarGatewayStub(client zbus.Client) *RegistrarGatewayStub {
 	}
 }
 
-func (s *RegistrarGatewayStub) CreateNode(ctx context.Context, arg0 types.UpdateNodeRequest) (ret0 uint64, ret1 error) {
+func (s *RegistrarGatewayStub) CreateNode(ctx context.Context, arg0 client.Node) (ret0 uint64, ret1 error) {
 	args := []interface{}{arg0}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "CreateNode", args...)
 	if err != nil {
@@ -168,7 +167,7 @@ func (s *RegistrarGatewayStub) GetNodeByTwinID(ctx context.Context, arg0 uint64)
 	return
 }
 
-func (s *RegistrarGatewayStub) GetNodeContracts(ctx context.Context, arg0 uint32) (ret0 []types1.U64, ret1 error) {
+func (s *RegistrarGatewayStub) GetNodeContracts(ctx context.Context, arg0 uint32) (ret0 []types.U64, ret1 error) {
 	args := []interface{}{arg0}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "GetNodeContracts", args...)
 	if err != nil {
@@ -304,7 +303,7 @@ func (s *RegistrarGatewayStub) GetZosVersion(ctx context.Context) (ret0 client.Z
 	return
 }
 
-func (s *RegistrarGatewayStub) Report(ctx context.Context, arg0 []tfchainclientgo.NruConsumption) (ret0 types1.Hash, ret1 error) {
+func (s *RegistrarGatewayStub) Report(ctx context.Context, arg0 []tfchainclientgo.NruConsumption) (ret0 types.Hash, ret1 error) {
 	args := []interface{}{arg0}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "Report", args...)
 	if err != nil {
@@ -339,7 +338,7 @@ func (s *RegistrarGatewayStub) SetContractConsumption(ctx context.Context, arg0 
 	return
 }
 
-func (s *RegistrarGatewayStub) SetNodePowerState(ctx context.Context, arg0 bool) (ret0 types1.Hash, ret1 error) {
+func (s *RegistrarGatewayStub) SetNodePowerState(ctx context.Context, arg0 bool) (ret0 types.Hash, ret1 error) {
 	args := []interface{}{arg0}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "SetNodePowerState", args...)
 	if err != nil {
@@ -356,7 +355,7 @@ func (s *RegistrarGatewayStub) SetNodePowerState(ctx context.Context, arg0 bool)
 	return
 }
 
-func (s *RegistrarGatewayStub) UpdateNode(ctx context.Context, arg0 types.UpdateNodeRequest) (ret0 error) {
+func (s *RegistrarGatewayStub) UpdateNode(ctx context.Context, arg0 client.Node) (ret0 error) {
 	args := []interface{}{arg0}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "UpdateNode", args...)
 	if err != nil {
