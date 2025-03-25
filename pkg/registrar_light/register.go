@@ -160,7 +160,7 @@ func registerNode(
 	node, regErr := registrarGateway.GetNodeByTwinID(ctx, twinID)
 	nodeID = node.NodeID
 	if regErr != nil {
-		if strings.Contains(regErr.Error(), client.ErrorNodeNotFround.Error()) {
+		if strings.Contains(regErr.Error(), client.ErrorNodeNotFound.Error()) {
 			nodeID, err = registrarGateway.CreateNode(ctx, real)
 			if err != nil {
 				return 0, 0, errors.Wrap(err, "failed to create node on registrar")
