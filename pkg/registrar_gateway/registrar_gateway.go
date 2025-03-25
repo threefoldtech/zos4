@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/hex"
-	"net/http"
 	"net/url"
 	"sync"
 	"time"
@@ -25,15 +24,13 @@ const AuthHeader = "X-Auth"
 
 type registrarGateway struct {
 	mu              sync.Mutex
-	httpClient      *http.Client
 	registrarClient client.RegistrarClient
 }
 
-func NewRegistrarGateway(cl zbus.Client) (zos4Pkg.RegistrarGateway, error) {
-	httpClient := http.DefaultClient
-
+func NewRegistrarGateway(ctx context.Context, cl zbus.Client) (zos4Pkg.RegistrarGateway, error) {
 	identity := stubs.NewIdentityManagerStub(cl)
-	sk := ed25519.PrivateKey(identity.PrivateKey(context.TODO()))
+	sk := ed25519.PrivateKey(identity.PrivateKey(ctx))
+	hexSeed := hex.EncodeToString(sk.Seed())
 
 	env := environment.MustGet()
 	url, err := url.JoinPath(env.RegistrarURL, "v1")
@@ -41,13 +38,12 @@ func NewRegistrarGateway(cl zbus.Client) (zos4Pkg.RegistrarGateway, error) {
 		return &registrarGateway{}, err
 	}
 
-	cli, err := client.NewRegistrarClient(url, sk.Seed())
+	cli, err := client.NewRegistrarClient(url, hexSeed)
 	if err != nil {
 		return &registrarGateway{}, errors.Wrap(err, "failed to create new registrar client")
 	}
 
 	gw := &registrarGateway{
-		httpClient:      httpClient,
 		mu:              sync.Mutex{},
 		registrarClient: cli,
 	}
@@ -84,7 +80,8 @@ func (r *registrarGateway) CreateTwin(relays []string, rmbEncKey string) (client
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	return r.registrarClient.CreateAccount(relays, rmbEncKey)
+	account, _, err := r.registrarClient.CreateAccount(relays, rmbEncKey)
+	return account, err
 }
 
 func (r *registrarGateway) EnsureAccount(relays []string, rmbEncKey string) (client.Account, error) {
@@ -123,9 +120,8 @@ func (r *registrarGateway) GetNodeByTwinID(twinID uint64) (client.Node, error) {
 		Str("method", "GetNodeByTwinID").
 		Uint64("twin_id", twinID).
 		Msg("method called")
-	nodes, err := r.registrarClient.GetNodeByTwinID(twinID)
-	log.Info().Err(err).Any("nodes", nodes).Msg("tries to get node by twin id, checkcing response")
-	return nodes, err
+
+	return r.registrarClient.GetNodeByTwinID(twinID)
 }
 
 func (r *registrarGateway) GetNodes(farmID uint64) (nodeIDs []uint64, err error) {
@@ -174,6 +170,7 @@ func (r *registrarGateway) UpdateNode(node client.Node) error {
 		client.UpdateNodesWithLocation(node.Location),
 		client.UpdateNodesWithResources(node.Resources),
 		client.UpdateNodesWithInterfaces(node.Interfaces),
+		client.UpdateNodesWithSerialNumber(node.SerialNumber),
 	}
 
 	if node.SecureBoot {

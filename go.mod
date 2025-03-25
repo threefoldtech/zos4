@@ -49,7 +49,7 @@ require (
 
 require (
 	github.com/hashicorp/go-retryablehttp v0.7.7
-	github.com/threefoldtech/tfgrid4-sdk-go/node-registrar v0.0.0-20250225100246-f4f5e1fbff97
+	github.com/threefoldtech/tfgrid4-sdk-go/node-registrar v0.0.0-20250323142129-f1f8fcc0a4fb
 )
 
 require (
@@ -129,6 +129,7 @@ require (
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	github.com/ulikunitz/xz v0.5.8 // indirect
 	github.com/vedhavyas/go-subkey v1.0.3 // indirect
+	github.com/vedhavyas/go-subkey/v2 v2.0.0 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/whs/nacl-sealed-box v0.0.0-20180930164530-92b9ba845d8d // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
@@ -163,3 +164,4 @@ require (
 )
 
 replace github.com/docker/distribution v2.7.1+incompatible => github.com/docker/distribution v2.7.1-0.20190205005809-0d3efadf0154+incompatible
+replace github.com/threefoldtech/zosbase => ../zosbase
