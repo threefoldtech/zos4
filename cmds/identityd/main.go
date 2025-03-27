@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/ed25519"
+	"encoding/base64"
 	"flag"
 	"fmt"
 	"os"
@@ -57,7 +59,7 @@ func main() {
 	flag.IntVar(&interval, "interval", 600, "interval in seconds between update checks, default to 600")
 	flag.BoolVar(&ver, "v", false, "show version and exit")
 	flag.BoolVar(&debug, "d", false, "when set, no self update is done before upgrading")
-	flag.BoolVar(&id, "id", false, "[deprecated] prints the node ID and exits")
+	flag.BoolVar(&id, "id", false, "prints the node ID/pubkey and exits needed for loki service")
 	flag.BoolVar(&net, "net", false, "prints the node network and exits")
 	flag.BoolVar(&farm, "farm", false, "prints the node farm id and exits")
 
@@ -82,7 +84,11 @@ func main() {
 			log.Fatal().Err(err).Msg("failed to connect to zbus")
 		}
 		stub := stubs.NewIdentityManagerStub(client)
-		fmt.Println(stub.NodeID(ctx))
+		sk := ed25519.PrivateKey(stub.PrivateKey(ctx))
+		pubKey := sk.Public().(ed25519.PublicKey)
+
+		// fmt.Println(stub.NodeID(ctx))
+		fmt.Println(base64.StdEncoding.EncodeToString(pubKey))
 
 		os.Exit(0)
 	}

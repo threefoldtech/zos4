@@ -6,12 +6,13 @@ package stubs
 
 import (
 	"context"
+	"time"
+
 	types1 "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	tfchainclientgo "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
 	zbus "github.com/threefoldtech/zbus"
 	types "github.com/threefoldtech/zos4/pkg/types"
 	pkg "github.com/threefoldtech/zosbase/pkg"
-	"time"
 )
 
 type RegistrarGatewayStub struct {
