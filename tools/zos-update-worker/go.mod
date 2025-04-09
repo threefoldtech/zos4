@@ -8,7 +8,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
-	github.com/threefoldtech/tfgrid4-sdk-go/node-registrar v0.0.0-20250409145235-3ffee627d2ae
+	github.com/threefoldtech/tfgrid4-sdk-go/node-registrar v0.0.0-20250409160225-5883fc775bc7
 )
 
 require (
