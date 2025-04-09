@@ -288,35 +288,3 @@ func (r *registrarGateway) SetNodePowerState(up bool) (hash subTypes.Hash, err e
 	// return g.sub.SetNodePowerState(g.identity, up)
 	return subTypes.Hash{}, nil
 }
-
-func buildSubstrateError(err error) (serr pkg.SubstrateError) {
-	if err == nil {
-		return
-	}
-
-	serr.Err = err
-	serr.Code = pkg.CodeGenericError
-
-	if errors.Is(err, substrate.ErrNotFound) {
-		serr.Code = pkg.CodeNotFound
-	} else if errors.Is(err, substrate.ErrBurnTransactionNotFound) {
-		serr.Code = pkg.CodeBurnTransactionNotFound
-	} else if errors.Is(err, substrate.ErrRefundTransactionNotFound) {
-		serr.Code = pkg.CodeRefundTransactionNotFound
-	} else if errors.Is(err, substrate.ErrFailedToDecode) {
-		serr.Code = pkg.CodeFailedToDecode
-	} else if errors.Is(err, substrate.ErrInvalidVersion) {
-		serr.Code = pkg.CodeInvalidVersion
-	} else if errors.Is(err, substrate.ErrUnknownVersion) {
-		serr.Code = pkg.CodeUnknownVersion
-	} else if errors.Is(err, substrate.ErrIsUsurped) {
-		serr.Code = pkg.CodeIsUsurped
-	} else if errors.Is(err, substrate.ErrAccountNotFound) {
-		serr.Code = pkg.CodeAccountNotFound
-	} else if errors.Is(err, substrate.ErrDepositFeeNotFound) {
-		serr.Code = pkg.CodeDepositFeeNotFound
-	} else if errors.Is(err, substrate.ErrMintTransactionNotFound) {
-		serr.Code = pkg.CodeMintTransactionNotFound
-	}
-	return
-}
