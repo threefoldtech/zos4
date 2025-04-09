@@ -62,7 +62,7 @@ func getRolloutConfig(ctx context.Context, gw *stubs.RegistrarGatewayStub) (clie
 		return client.ZosVersion{}, nil, errors.Wrap(err, "failed to get network config")
 	}
 
-	// if we are on devnet just update we don't need to update the version throught out the registrar
+	// if we are on devnet just update we don't need to update the version through out the registrar
 	v := client.ZosVersion{Version: "v0.0.0", SafeToUpgrade: true}
 	if env.RunningMode != environment.RunningDev {
 		v, err = gw.GetZosVersion(ctx)

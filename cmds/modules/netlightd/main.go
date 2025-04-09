@@ -131,7 +131,7 @@ func action(cli *cli.Context) error {
 		return fmt.Errorf("failed to setup mycelium on host: %w", err)
 	}
 
-	// if err := nft.DropTrafficToLAN(); err != nil {
+	// if err := nft.DropTrafficToLAN(""); err != nil {
 	// 	return fmt.Errorf("failed to drop traffic to lan: %w", err)
 	// }
 
