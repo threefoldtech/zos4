@@ -98,7 +98,7 @@ func action(cli *cli.Context) error {
 		return err
 	}
 
-	api, err := zosapi.NewZosAPI(redis, uint32(farmer.TwinID), msgBrokerCon)
+	api, err := zosapi.NewZosAPIWithFarmerID(redis, uint32(farmer.TwinID), msgBrokerCon)
 	if err != nil {
 		return fmt.Errorf("failed to create zos api: %w", err)
 	}
