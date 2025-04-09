@@ -93,12 +93,7 @@ func action(cli *cli.Context) error {
 		return fmt.Errorf("failed to get farm: %w", err)
 	}
 
-	farmer, err := gw.GetTwin(farm.TwinID)
-	if err != nil {
-		return err
-	}
-
-	api, err := zosapi.NewZosAPIWithFarmerID(redis, uint32(farmer.TwinID), msgBrokerCon)
+	api, err := zosapi.NewZosAPIWithFarmerID(redis, uint32(farm.TwinID), msgBrokerCon)
 	if err != nil {
 		return fmt.Errorf("failed to create zos api: %w", err)
 	}
