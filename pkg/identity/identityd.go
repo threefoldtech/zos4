@@ -1,8 +1,6 @@
 package identity
 
 import (
-	"crypto/ed25519"
-	"encoding/hex"
 	"net/url"
 
 	"github.com/rs/zerolog/log"
@@ -92,9 +90,7 @@ func (d *identityManager) Farm() (name string, err error) {
 		return "", err
 	}
 
-	seed := ed25519.PrivateKey(d.PrivateKey()).Seed()
-	hexSeed := hex.EncodeToString(seed)
-	client, err := client.NewRegistrarClient(url, hexSeed)
+	client, err := client.NewRegistrarClient(url)
 	if err != nil {
 		return "", err
 	}
