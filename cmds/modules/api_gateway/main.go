@@ -57,11 +57,7 @@ func action(cli *cli.Context) error {
 
 	sk := ed25519.PrivateKey(idStub.PrivateKey(cli.Context))
 	pubKey := sk.Public().(ed25519.PublicKey)
-
 	log.Info().Str("public key", string(pubKey)).Msg("node public key")
-	if err != nil {
-		return err
-	}
 
 	manager, err := environment.GetSubstrate()
 	if err != nil {
@@ -69,7 +65,7 @@ func action(cli *cli.Context) error {
 	}
 
 	router := peer.NewRouter()
-	gw, err := registrar.NewRegistrarGateway(redis)
+	gw, err := registrar.NewRegistrarGateway(cli.Context, redis)
 	if err != nil {
 		return fmt.Errorf("failed to create api gateway: %w", err)
 	}
@@ -92,7 +88,12 @@ func action(cli *cli.Context) error {
 		}
 	}()
 
-	api, err := zosapi.NewZosAPI(manager, redis, msgBrokerCon)
+	farm, err := gw.GetFarm(uint64(environment.MustGet().FarmID))
+	if err != nil {
+		return fmt.Errorf("failed to get farm: %w", err)
+	}
+
+	api, err := zosapi.NewZosAPIWithFarmerID(redis, uint32(farm.TwinID), msgBrokerCon)
 	if err != nil {
 		return fmt.Errorf("failed to create zos api: %w", err)
 	}

@@ -220,7 +220,7 @@ func action(cli *cli.Context) error {
 	}
 	go events.Start(ctx)
 
-	system, err := monitord.NewSystemMonitor(node, 2*time.Second)
+	system, err := monitord.NewSystemMonitor(node, 2*time.Second, redis)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to initialize system monitor")
 	}

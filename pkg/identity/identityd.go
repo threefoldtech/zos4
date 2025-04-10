@@ -1,13 +1,11 @@
 package identity
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
+	"net/url"
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/threefoldtech/zos4/pkg/types"
+	"github.com/threefoldtech/tfgrid4-sdk-go/node-registrar/client"
 	"github.com/threefoldtech/zosbase/pkg/crypto"
 	"github.com/threefoldtech/zosbase/pkg/identity/store"
 
@@ -87,24 +85,17 @@ func (d *identityManager) Farm() (name string, err error) {
 	}
 
 	env := environment.MustGet()
-
-	url := fmt.Sprintf("%s/v1/farms/%d", env.RegistrarURL, env.FarmID)
-	resp, err := http.DefaultClient.Get(url)
+	url, err := url.JoinPath(env.RegistrarURL, "api", "v1")
 	if err != nil {
 		return "", err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to get farm with status code %s", resp.Status)
-	}
-	defer resp.Body.Close()
-
-	var farm types.Farm
-	err = json.NewDecoder(resp.Body).Decode(&farm)
+	client, err := client.NewRegistrarClient(url)
 	if err != nil {
 		return "", err
 	}
 
+	farm, err := client.GetFarm(uint64(env.FarmID))
 	d.farm = farm.FarmName
 	return farm.FarmName, err
 }
