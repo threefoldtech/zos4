@@ -85,7 +85,7 @@ func (d *identityManager) Farm() (name string, err error) {
 	}
 
 	env := environment.MustGet()
-	url, err := url.JoinPath(env.RegistrarURL, "v1")
+	url, err := url.JoinPath(env.RegistrarURL, "api", "v1")
 	if err != nil {
 		return "", err
 	}
