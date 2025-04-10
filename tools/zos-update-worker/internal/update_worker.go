@@ -2,18 +2,16 @@ package internal
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/cenkalti/backoff"
 	"github.com/rs/zerolog/log"
+	"github.com/threefoldtech/tfgrid4-sdk-go/node-registrar/client"
 )
 
 type Network string
@@ -30,63 +28,17 @@ type Params struct {
 	TestUrl  string
 	MainUrl  string
 }
-type RegistrarClient struct {
-	url string
-}
-
-func NewRegistrarClient(url string) RegistrarClient {
-	return RegistrarClient{url: url}
-}
-
-type RegistrarVersion struct {
-	SafeToUpgrade bool   `json:"safe_to_upgrade"`
-	Version       string `json:"version"`
-}
-
-func (r RegistrarClient) GetZosVersion() (RegistrarVersion, error) {
-	url := fmt.Sprintf("%s/v1/zos/version", r.url)
-	resp, err := http.DefaultClient.Get(url)
-	if err != nil {
-		fmt.Println("Error sending get version request:", err)
-		return RegistrarVersion{}, err
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error reading response body:", err)
-	} else {
-		fmt.Println("Response received:", string(body))
-	}
-	if resp.StatusCode != http.StatusOK {
-		return RegistrarVersion{}, fmt.Errorf("failed to get version %s with status code %s", url, resp.Status)
-	}
-	defer resp.Body.Close()
-	jsonVersion, err := base64.StdEncoding.DecodeString(strings.Trim(string(body), "\""))
-	if err != nil {
-		return RegistrarVersion{}, fmt.Errorf("failed to decode version %w", err)
-	}
-	correctedJSON := strings.ReplaceAll(string(jsonVersion), "'", "\"")
-	var version RegistrarVersion
-	err = json.Unmarshal([]byte(correctedJSON), &version)
-	// err = json.NewDecoder(resp.Body).Decode(&version)
-	if err != nil {
-		return RegistrarVersion{}, fmt.Errorf("failed to unmarshal version %w", err)
-	}
-
-	return version, nil
-}
 
 type Worker struct {
 	src string
 	dst string
 
 	interval time.Duration
-	clients  map[Network]RegistrarClient
+	clients  map[Network]client.RegistrarClient
 }
 
 // NewWorker creates a new instance of the worker
 func NewWorker(src string, dst string, params Params) (*Worker, error) {
-
 	// we need to recalculate the path of the symlink here because of the following
 	// - assume we run the tool like `updater -d dst -s src`
 	// - it's then gonna build the links as above.
@@ -109,18 +61,30 @@ func NewWorker(src string, dst string, params Params) (*Worker, error) {
 
 	log.Info().Str("src", src).Str("dst", dst).Msg("paths")
 
-	clients := map[Network]RegistrarClient{}
+	clients := map[Network]client.RegistrarClient{}
 
 	if params.QAUrl != "" {
-		clients[QANetwork] = RegistrarClient{url: params.QAUrl}
+		cli, err := client.NewRegistrarClient(params.QAUrl)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create new registrar client for qa net")
+		}
+		clients[QANetwork] = cli
 	}
 
 	if params.TestUrl != "" {
-		clients[TestNetwork] = RegistrarClient{url: params.TestUrl}
+		cli, err := client.NewRegistrarClient(params.TestUrl)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create new registrar client for test net")
+		}
+		clients[TestNetwork] = cli
 	}
 
 	if params.MainUrl != "" {
-		clients[MainNetwork] = RegistrarClient{url: params.MainUrl}
+		cli, err := client.NewRegistrarClient(params.MainUrl)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create new registrar client for main net")
+		}
+		clients[MainNetwork] = cli
 	}
 
 	return &Worker{
@@ -141,7 +105,7 @@ func checkNetwork(network Network) error {
 }
 
 // updateZosVersion updates the latest zos flist for a specific network with the updated zos version
-func (w *Worker) updateZosVersion(network Network, regClient RegistrarClient) error {
+func (w *Worker) updateZosVersion(network Network, regClient client.RegistrarClient) error {
 	if err := checkNetwork(network); err != nil {
 		return err
 	}
@@ -167,7 +131,7 @@ func (w *Worker) updateZosVersion(network Network, regClient RegistrarClient) er
 		return fmt.Errorf("failed to get dst relative path to src: %w", err)
 	}
 
-	//zos
+	// zos
 	zosCurrent := fmt.Sprintf("%v/.tag-%v", w.src, regVersion.Version)
 	zosLatest := fmt.Sprintf("%v/%v", w.dst, network)
 
@@ -225,15 +189,12 @@ func (w *Worker) UpdateWithInterval(ctx context.Context) {
 			exp.MaxInterval = 2 * time.Second
 			exp.MaxElapsedTime = 10 * time.Second
 			err := backoff.Retry(func() error {
-
 				err := w.updateZosVersion(network, regClient)
 				if err != nil {
 					log.Error().Err(err).Msg("update failure. retrying")
 				}
 				return err
-
 			}, exp)
-
 			if err != nil {
 				log.Error().Err(err).Msg("update zos failed with error")
 			}
