@@ -33,7 +33,7 @@ func NewRegistrarGateway(ctx context.Context, cl zbus.Client) (zos4Pkg.Registrar
 	hexSeed := hex.EncodeToString(sk.Seed())
 
 	env := environment.MustGet()
-	url, err := url.JoinPath(env.RegistrarURL, "v1")
+	url, err := url.JoinPath(env.RegistrarURL, "api", "v1")
 	if err != nil {
 		return &registrarGateway{}, err
 	}
