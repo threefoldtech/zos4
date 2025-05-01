@@ -55,7 +55,7 @@ func (u *Uptime) SendNow() error {
 		return errors.Wrap(err, "failed to get uptime")
 	}
 
-	return u.registrarGateway.UpdateNodeUptimeV2(context.Background(), time.Duration(uptime), time.Now())
+	return u.registrarGateway.UpdateNodeUptimeV2(context.Background(), uptime, time.Now().Unix())
 }
 
 func (u *Uptime) uptime(ctx context.Context) error {

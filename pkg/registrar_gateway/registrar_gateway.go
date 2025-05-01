@@ -67,7 +67,7 @@ func (r *registrarGateway) CreateNode(node client.Node) (uint64, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	return r.registrarClient.RegisterNode(node.FarmID, node.TwinID, node.Interfaces, node.Location, node.Resources, node.SerialNumber, node.SecureBoot, node.Virtualized)
+	return r.registrarClient.RegisterNode(node)
 }
 
 func (r *registrarGateway) CreateTwin(relays []string, rmbEncKey string) (client.Account, error) {
@@ -183,7 +183,7 @@ func (r *registrarGateway) UpdateNode(node client.Node) error {
 	return r.registrarClient.UpdateNode(opts...)
 }
 
-func (r *registrarGateway) UpdateNodeUptimeV2(uptime time.Duration, timestamp time.Time) (err error) {
+func (r *registrarGateway) UpdateNodeUptimeV2(uptime uint64, timestamp int64) (err error) {
 	log.Debug().
 		Str("method", "UpdateNodeUptimeV2").
 		Uint64("uptime", uint64(uptime)).

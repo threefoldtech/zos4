@@ -6,13 +6,12 @@ package stubs
 
 import (
 	"context"
-	"time"
-
-	types1 "github.com/centrifuge/go-substrate-rpc-client/v4/types"
+	types "github.com/centrifuge/go-substrate-rpc-client/v4/types"
 	tfchainclientgo "github.com/threefoldtech/tfchain/clients/tfchain-client-go"
 	client "github.com/threefoldtech/tfgrid4-sdk-go/node-registrar/client"
 	zbus "github.com/threefoldtech/zbus"
 	pkg "github.com/threefoldtech/zosbase/pkg"
+	"time"
 )
 
 type RegistrarGatewayStub struct {
@@ -371,7 +370,7 @@ func (s *RegistrarGatewayStub) UpdateNode(ctx context.Context, arg0 client.Node)
 	return
 }
 
-func (s *RegistrarGatewayStub) UpdateNodeUptimeV2(ctx context.Context, arg0 time.Duration, arg1 time.Time) (ret0 error) {
+func (s *RegistrarGatewayStub) UpdateNodeUptimeV2(ctx context.Context, arg0 uint64, arg1 int64) (ret0 error) {
 	args := []interface{}{arg0, arg1}
 	result, err := s.client.RequestContext(ctx, s.module, s.object, "UpdateNodeUptimeV2", args...)
 	if err != nil {

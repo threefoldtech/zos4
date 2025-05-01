@@ -22,7 +22,7 @@ type RegistrarGateway interface {
 	GetNodes(farmID uint64) ([]uint64, error)
 	GetNodeByTwinID(twin uint64) (client.Node, error)
 	UpdateNode(node client.Node) error
-	UpdateNodeUptimeV2(uptime time.Duration, timestamp time.Time) (err error)
+	UpdateNodeUptimeV2(uptime uint64, timestamp int64) (err error)
 
 	GetFarm(id uint64) (client.Farm, error)
 

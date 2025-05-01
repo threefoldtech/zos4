@@ -112,12 +112,12 @@ func registerNode(
 	interfaces := []client.Interface{{
 		Name: infs.Interfaces["zos"].Name,
 		Mac:  infs.Interfaces["zos"].Mac,
-		IPs: func() string {
+		IPs: func() []string {
 			ips := make([]string, 0)
 			for _, ip := range infs.Interfaces["zos"].IPs {
 				ips = append(ips, ip.IP.String())
 			}
-			return strings.Join(ips, "/")
+			return ips
 		}(),
 	}}
 
