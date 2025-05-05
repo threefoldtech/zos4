@@ -186,7 +186,7 @@ func (r *registrarGateway) UpdateNode(node client.Node) error {
 func (r *registrarGateway) UpdateNodeUptimeV2(uptime uint64, timestamp int64) (err error) {
 	log.Debug().
 		Str("method", "UpdateNodeUptimeV2").
-		Uint64("uptime", uint64(uptime)).
+		Uint64("uptime", uptime).
 		Msg("method called")
 
 	r.mu.Lock()
