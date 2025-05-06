@@ -273,6 +273,7 @@ func action(cli *cli.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get node from twin")
 	}
+	nodeID := node.NodeID
 
 	queues := filepath.Join(rootDir, "queues")
 	if err := os.MkdirAll(queues, 0755); err != nil {
@@ -300,7 +301,7 @@ func action(cli *cli.Context) error {
 		queues,
 		provision.WithTwins(users),
 		provision.WithAdmins(admins),
-		provision.WithAPIGateway(node, registrarGateway),
+		provision.WithAPIGateway(nodeID, registrarGateway),
 		// set priority to some reservation types on boot
 		// so we always need to make sure all volumes and networks
 		// comes first.
@@ -361,7 +362,7 @@ func action(cli *cli.Context) error {
 		return errors.Wrap(err, "failed to create event consumer")
 	}
 
-	handler := NewContractEventHandler(node, registrarGateway, engine, consumer)
+	handler := NewContractEventHandler(nodeID, registrarGateway, engine, consumer)
 
 	go func() {
 		if err := handler.Run(ctx); err != nil && err != context.Canceled {

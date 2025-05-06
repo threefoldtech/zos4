@@ -9,8 +9,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
+	"github.com/threefoldtech/tfgrid4-sdk-go/node-registrar/client"
 	"github.com/threefoldtech/zos4/pkg/stubs"
-	"github.com/threefoldtech/zos4/pkg/types"
 	"github.com/threefoldtech/zosbase/pkg"
 	"github.com/threefoldtech/zosbase/pkg/events"
 	"github.com/threefoldtech/zosbase/pkg/network/bridge"
@@ -132,7 +132,7 @@ func (p *PowerServer) syncSelf() error {
 	return nil
 }
 
-func (p *PowerServer) powerUp(node *types.Node, reason string) error {
+func (p *PowerServer) powerUp(node *client.Node, reason string) error {
 	log.Info().Uint64("node", node.NodeID).Str("reason", reason).Msg("powering on node")
 
 	mac := ""
