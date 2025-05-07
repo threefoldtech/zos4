@@ -137,7 +137,7 @@ func registerNode(
 
 	log.Info().Str("id", mgr.NodeID(ctx).Identity()).Msg("start registration of the node on zos4 registrar")
 
-	account, err := registrarGateway.EnsureAccount(ctx, env.RelayURL, "")
+	account, err := registrarGateway.EnsureAccount(ctx, environment.GetRelaysURLs(), "")
 	if err != nil {
 		log.Info().Msg("failed to EnsureAccount")
 		return 0, 0, errors.Wrap(err, "failed to ensure account")

@@ -159,9 +159,8 @@ func (r *Registrar) register(ctx context.Context, cl zbus.Client, env environmen
 }
 
 func (r *Registrar) reActivate(ctx context.Context, cl zbus.Client) error {
-	env := environment.MustGet()
 	registrarGateway := zos4stubs.NewRegistrarGatewayStub(cl)
-	_, err := registrarGateway.EnsureAccount(ctx, env.RelayURL, "")
+	_, err := registrarGateway.EnsureAccount(ctx, environment.GetRelaysURLs(), "")
 
 	return err
 }
