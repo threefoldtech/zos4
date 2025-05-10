@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -64,7 +65,12 @@ func NewWorker(src string, dst string, params Params) (*Worker, error) {
 	clients := map[Network]client.RegistrarClient{}
 
 	if params.QAUrl != "" {
-		cli, err := client.NewRegistrarClient(params.QAUrl)
+		url, err := url.JoinPath(params.QAUrl, "v1")
+		if err != nil {
+			return nil, err
+		}
+
+		cli, err := client.NewRegistrarClient(url)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create new registrar client for qa net")
 		}
@@ -72,7 +78,12 @@ func NewWorker(src string, dst string, params Params) (*Worker, error) {
 	}
 
 	if params.TestUrl != "" {
-		cli, err := client.NewRegistrarClient(params.TestUrl)
+		url, err := url.JoinPath(params.TestUrl, "v1")
+		if err != nil {
+			return nil, err
+		}
+
+		cli, err := client.NewRegistrarClient(url)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create new registrar client for test net")
 		}
@@ -80,7 +91,12 @@ func NewWorker(src string, dst string, params Params) (*Worker, error) {
 	}
 
 	if params.MainUrl != "" {
-		cli, err := client.NewRegistrarClient(params.MainUrl)
+		url, err := url.JoinPath(params.MainUrl, "v1")
+		if err != nil {
+			return nil, err
+		}
+
+		cli, err := client.NewRegistrarClient(url)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create new registrar client for main net")
 		}
