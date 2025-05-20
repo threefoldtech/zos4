@@ -11,9 +11,9 @@ func TestWorker(t *testing.T) {
 
 	params := Params{
 		Interval: 1 * time.Second,
-		QAUrl:    "https://registrar.qa4.grid.tf",
-		TestUrl:  "https://registrar.test4.grid.tf",
-		MainUrl:  "https://registrar.prod4.grid.tf",
+		QAUrl:    "https://registrar.qa4.grid.tf/api/v1",
+		TestUrl:  "https://registrar.test4.grid.tf/api/v1",
+		MainUrl:  "https://registrar.prod4.grid.tf/api/v1",
 	}
 	src := testDir + "/tf-autobuilder"
 	dst := testDir + "/tf-zos"
