@@ -32,13 +32,14 @@ Grid v4 operates with the following key components:
 
 ## Node Registration Process
 
-When a node boots for the first time, it follows these steps:
+When starting for the first time, the node needs to register itself on the node registerar following these steps:
 
 1. The `identityd` daemon generates or loads a key pair that represents the node's identity.
    - This key pair is used for signing all communications with the registrar server.
    - The public key serves as the node's unique identifier.
 
 2. The `registrar_light` module collects node information:
+   - Which farm it belongs to
    - Hardware capacity (CPU, memory, storage, GPU)
    - Geographic location (obtained via geoip service)
    - Network interfaces (name, MAC address, IPs)
@@ -63,6 +64,8 @@ When a node boots for the first time, it follows these steps:
    - The node updates its information on the registrar server (every 24 hours).
    - The node updates uptime on the registrar server (every 40 hours).
    - If the node's network address changes, it immediately re-registers.
+
+- Once identity has been established, secure and trusted communication can be established between the different parties.
 
 ## Node Architecture
 
@@ -93,7 +96,7 @@ Grid v4 implements a sophisticated version control system:
 2. **Update Detection**:
    - The `upgrade` package in the node checks for updates periodically (every 60 minutes with jitter).
    - The node compares its current version with the version from the registrar.
-   - If versions differ and the `SafeToUpgrade` flag is true (or the node is on a test farm), the update process begins.
+   - If versions differ and the `SafeToUpgrade` flag is true (or the node is on one of the predefined test farm), the update process begins.
 
 3. **Update Process**:
    - Updates are fetched from a hub server as flist packages.
@@ -167,11 +170,6 @@ This is not fully implemented yet
    - Users interact with the grid through client tools or APIs.
    - The primary interface is zos-api-light.
 
-2. **Request Authentication**:
-   - All requests are signed using the sender's private key.
-   - The signature is included in the `X-Auth` HTTP header.
-   - This ensures that only authorized users can interact with the grid.
-
 3. **Node-Registrar Communication**:
    - Nodes communicate with the registrar server through signed HTTP requests.
    - The registrar validates the signature using the node's public key.
@@ -192,25 +190,6 @@ This is not fully implemented yet
    - This includes uptime, resource usage, and health information.
    - The registrar uses this information to maintain an up-to-date view of the grid.
 
-## Security
-
-Grid v4 implements several security measures:
-
-1. **Cryptographic Identity**:
-   - All entities (nodes, users) have a unique identity based on Ed25519/SR25519 key pairs.
-   - The public key serves as the identity, while the private key is used for signing.
-   - This provides a secure and verifiable way to identify entities.
-
-2. **Signed Communication**:
-   - All communication is signed using Ed25519/SR25519 cryptographic signatures.
-   - This ensures that messages cannot be tampered with or forged.
-   - The signature is verified by the recipient before processing the request.
-
-3. **Authentication and Authorization**:
-   - The registrar server validates node authenticity using signatures.
-   - Workload deployments are authorized based on twin identity.
-   - Only authorized users can deploy workloads on nodes.
-
 ## Future Developments
 
 While Grid v4 is operational, some components are still under development:
@@ -220,7 +199,7 @@ While Grid v4 is operational, some components are still under development:
    - A new Open RPC API will be developed to replace the RMB used in Grid3.
    - This will enable peer-to-peer communication between nodes for distributed workloads.
 
-2. **Contract Management**:
+2. **Deployments and Contract Management**:
    - Contract management is not fully implemented yet.
    - This will provide a way to manage agreements between users and nodes.
    - It will include billing, resource allocation, and service level agreements.
