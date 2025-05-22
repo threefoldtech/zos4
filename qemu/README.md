@@ -2,7 +2,7 @@
 
 | For a quick development docs check [here](../docs/development/README.md)
 
-This folder contains a script that you can use to run 0-OS in a VM using qemu.
+his folder contains a script that you can use to run 0-OS in a VM using qemu.
 
 ## Requirements
 
@@ -112,7 +112,7 @@ sudo dnsmasq --strict-order \
 1. Now run your vm
 
 ```bash
-sudo ./vm.sh -n node-01 -c "farmer_id=47 printk.devmsg=on runmode=dev ssh-user=<github username>"
+sudo ./vm.sh -n node-01 -c "farmer_id=1 version=v4 printk.devmsg=on runmode=dev ssh-user=<github username>"
 ```
 
 where `runmode` is one of `dev` , `test`  or `prod`,
