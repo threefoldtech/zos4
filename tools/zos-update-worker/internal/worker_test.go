@@ -41,10 +41,11 @@ func TestWorker(t *testing.T) {
 	})
 
 	t.Run("test_no_src_test", func(t *testing.T) {
-		_, err := os.Create(src + "/zos:v3.4.0-qa1.flist")
+		f, err := os.Create(src + "/zos:v3.4.0-qa1.flist")
 		if err != nil {
 			t.Error(err)
 		}
+		defer f.Close()
 
 		err = worker.updateZosVersion("testing", worker.clients["testing"])
 		if err == nil {
@@ -53,10 +54,11 @@ func TestWorker(t *testing.T) {
 	})
 
 	t.Run("test_no_src_main", func(t *testing.T) {
-		_, err = os.Create(src + "/zos:v3.1.1-rc2.flist")
+		f, err := os.Create(src + "/zos:v3.1.1-rc2.flist")
 		if err != nil {
 			t.Error(err)
 		}
+		defer f.Close()
 
 		err = worker.updateZosVersion("production", worker.clients["production"])
 		if err == nil {
