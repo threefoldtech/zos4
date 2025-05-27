@@ -47,7 +47,6 @@ var Module cli.Command = cli.Command{
 // copy files from src dir to dst dir works at one level only for
 // our specific use case
 func copyDepth1(src, dst string) error {
-
 	return filepath.Walk(src, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -62,11 +61,15 @@ func copyDepth1(src, dst string) error {
 		if err != nil {
 			return err
 		}
+		defer srcF.Close()
+
 		dstPath := filepath.Join(dst, filepath.Base(path))
 		dstF, err := os.Create(dstPath)
 		if err != nil {
 			return err
 		}
+		defer dstF.Close()
+
 		_, err = io.Copy(dstF, srcF)
 		return err
 	})
@@ -92,7 +95,7 @@ func action(cli *cli.Context) error {
 		return errors.Wrap(err, "fail to connect to message broker server")
 	}
 
-	config, err := cache.VolatileDir(module, 50*1024*1024) //50mb volatile directory
+	config, err := cache.VolatileDir(module, 50*1024*1024) // 50mb volatile directory
 	if err != nil && !os.IsExist(err) {
 		return errors.Wrap(err, "failed to create vmd volatile storage")
 	}

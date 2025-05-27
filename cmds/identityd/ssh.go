@@ -75,6 +75,12 @@ func manageSSHKeys() error {
 				return fmt.Errorf("failed to fetch user keys: %+w", err)
 			}
 
+			defer func() {
+				if res != nil && res.Body != nil {
+					res.Body.Close()
+				}
+			}()
+
 			if res.StatusCode == http.StatusNotFound {
 				return backoff.Permanent(fmt.Errorf("failed to get user keys for user (%s): keys not found", user))
 			}

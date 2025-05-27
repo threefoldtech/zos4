@@ -3,10 +3,10 @@ package apigateway
 import (
 	"context"
 	"crypto/ed25519"
-	"encoding/hex"
+	// "encoding/hex"
 	"fmt"
 
-	"github.com/cenkalti/backoff/v3"
+	// "github.com/cenkalti/backoff/v3"
 	"github.com/rs/zerolog/log"
 	"github.com/threefoldtech/tfgrid-sdk-go/rmb-sdk-go/peer"
 	"github.com/threefoldtech/zbus"
@@ -49,20 +49,22 @@ func action(cli *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("fail to connect to message broker server: %w", err)
 	}
+
 	redis, err := zbus.NewRedisClient(msgBrokerCon)
 	if err != nil {
 		return fmt.Errorf("fail to connect to message broker server: %w", err)
 	}
+
 	idStub := stubs.NewIdentityManagerStub(redis)
 
 	sk := ed25519.PrivateKey(idStub.PrivateKey(cli.Context))
 	pubKey := sk.Public().(ed25519.PublicKey)
 	log.Info().Str("public key", string(pubKey)).Msg("node public key")
 
-	manager, err := environment.GetSubstrate()
-	if err != nil {
-		return fmt.Errorf("failed to create substrate manager: %w", err)
-	}
+	// manager, err := environment.GetSubstrate()
+	// if err != nil {
+	// 	return fmt.Errorf("failed to create substrate manager: %w", err)
+	// }
 
 	router := peer.NewRouter()
 	gw, err := registrar.NewRegistrarGateway(cli.Context, redis)
@@ -99,24 +101,25 @@ func action(cli *cli.Context) error {
 	}
 	api.SetupRoutes(router)
 
-	bo := backoff.NewExponentialBackOff()
-	bo.MaxElapsedTime = 0
-	backoff.Retry(func() error {
-		_, err = peer.NewPeer(
-			ctx,
-			hex.EncodeToString(sk.Seed()),
-			manager,
-			router.Serve,
-			peer.WithKeyType(peer.KeyTypeEd25519),
-			peer.WithRelay(environment.GetRelaysURLs()...),
-			peer.WithInMemoryExpiration(6*60*60), // 6 hours
-		)
-		if err != nil {
-			return fmt.Errorf("failed to start a new rmb peer: %w", err)
-		}
-
-		return nil
-	}, bo)
+	// bo := backoff.NewExponentialBackOff()
+	// bo.MaxElapsedTime = 0
+	// backoff.Retry(func() error {
+	// 	_, err = peer.NewPeer(
+	// 		ctx,
+	// 		hex.EncodeToString(sk.Seed()),
+	// 		manager,
+	// 		router.Serve,
+	// 		peer.WithKeyType(peer.KeyTypeEd25519),
+	// 		peer.WithRelay(environment.GetRelaysURLs()...),
+	// 		peer.WithInMemoryExpiration(6*60*60), // 6 hours
+	// 	)
+	// 	if err != nil {
+	// 		log.Error().Err(err).Msg("faling to start api-gateway, trying over and over again")
+	// 		return fmt.Errorf("failed to start a new rmb peer: %w", err)
+	// 	}
+	//
+	// 	return nil
+	// }, bo)
 
 	log.Info().
 		Str("broker", msgBrokerCon).
