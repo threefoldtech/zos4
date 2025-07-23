@@ -11,7 +11,7 @@ use std::path::Path;
 
 #[derive(Deserialize)]
 struct ZosConfig {
-    hub_url: Vec<String>,
+    v4hub_url: Vec<String>,
 }
 
 fn get_hub_url(runmode: &RunMode) -> Result<Vec<String>> {
@@ -24,7 +24,7 @@ fn get_hub_url(runmode: &RunMode) -> Result<Vec<String>> {
     };
 
     let config_url = format!("{}/{}", base_url, config_filename);
-    let fallback = vec!["https://hub.grid.tf".to_string()];
+    let fallback = vec!["https://v4.hub.grid.tf".to_string()];
 
     let hub_urls = retry(Exponential::from_millis(1000).take(5), || {
         match get(config_url.as_str()) {
@@ -43,10 +43,10 @@ fn get_hub_url(runmode: &RunMode) -> Result<Vec<String>> {
         Err(_) => return Ok(fallback),
     };
 
-    if config.hub_url.is_empty() {
+    if config.v4hub_url.is_empty() {
         Ok(fallback)
     } else {
-        Ok(config.hub_url)
+        Ok(config.v4hub_url)
     }
 }
 
