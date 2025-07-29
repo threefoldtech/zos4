@@ -96,6 +96,11 @@ func runChecks(ctx context.Context, rootDir string, cl zbus.Client) error {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
+	zui := stubs.NewZUIStub(cl)
+	// empty out zui errors for registrar
+	if zuiErr := zui.PushErrors(ctx, "integrity", []string{}); zuiErr != nil {
+		log.Info().Err(zuiErr).Send()
+	}
 	cmd := exec.CommandContext(ctx, os.Args[0], "--root", rootDir, "--integrity")
 	var buf bytes.Buffer
 	cmd.Stderr = &buf
@@ -110,7 +115,6 @@ func runChecks(ctx context.Context, rootDir string, cl zbus.Client) error {
 
 	log.Error().Str("stderr", buf.String()).Err(err).Msg("integrity check failed, resetting rrd db")
 
-	zui := stubs.NewZUIStub(cl)
 	if er := zui.PushErrors(ctx, "integrity", []string{
 		fmt.Sprintf("integrity check failed, resetting rrd db stderr=%s: %v", buf.String(), err),
 	}); er != nil {
@@ -344,6 +348,7 @@ func action(cli *cli.Context) error {
 	// call the runtime upgrade before running engine
 	if err := provisioners.Initialize(ctx); err != nil {
 		log.Error().Err(err).Msg("failed to run provisioners initializers")
+		return err
 	}
 
 	// spawn the engine
