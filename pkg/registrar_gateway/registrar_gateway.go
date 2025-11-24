@@ -129,8 +129,7 @@ func (r *registrarGateway) GetNodes(farmID uint64) (nodeIDs []uint64, err error)
 		Str("method", "GetNodes").
 		Uint64("farm_id", farmID).
 		Msg("method called")
-
-	nodes, err := r.registrarClient.ListNodes(client.ListNodesWithFarmID(farmID))
+	nodes, err := r.registrarClient.ListNodes(client.NodeFilter{FarmID: &farmID})
 	for _, node := range nodes {
 		nodeIDs = append(nodeIDs, node.NodeID)
 	}
@@ -165,22 +164,18 @@ func (r *registrarGateway) UpdateNode(node client.Node) error {
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	opts := []client.UpdateNodeOpts{
-		client.UpdateNodesWithFarmID(node.FarmID),
-		client.UpdateNodesWithLocation(node.Location),
-		client.UpdateNodesWithResources(node.Resources),
-		client.UpdateNodesWithInterfaces(node.Interfaces),
-		client.UpdateNodesWithSerialNumber(node.SerialNumber),
+
+	update := client.NodeUpdate{
+		FarmID:       &node.FarmID,
+		Location:     &node.Location,
+		Resources:    &node.Resources,
+		Interfaces:   node.Interfaces,
+		SerialNumber: &node.SerialNumber,
+		SecureBoot:   &node.SecureBoot,
+		Virtualized:  &node.Virtualized,
 	}
 
-	if node.SecureBoot {
-		opts = append(opts, client.UpdateNodesWithSecureBoot())
-	}
-	if node.Virtualized {
-		opts = append(opts, client.UpdateNodesWithVirtualized())
-	}
-
-	return r.registrarClient.UpdateNode(opts...)
+	return r.registrarClient.UpdateNode(update)
 }
 
 func (r *registrarGateway) UpdateNodeUptimeV2(uptime uint64, timestamp int64) (err error) {
