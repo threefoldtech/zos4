@@ -36,18 +36,18 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.34.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/threefoldtech/0-fs v1.3.1-0.20240424140157-b488dfedcc56
-	github.com/threefoldtech/tfchain/clients/tfchain-client-go v0.0.0-20241127100051-77e684bcb1b2
-	github.com/threefoldtech/tfgrid-sdk-go/rmb-sdk-go v0.16.8
-	github.com/threefoldtech/tfgrid4-sdk-go/node-registrar v0.0.0-20250506110945-e1591751c92f
+	github.com/threefoldtech/tfchain/clients/tfchain-client-go v0.0.0-20250929084418-b950278ead30
+	github.com/threefoldtech/tfgrid-sdk-go/rmb-sdk-go v0.17.3
+	github.com/threefoldtech/tfgrid4-sdk-go/node-registrar v0.0.0-20251124140719-d63b7b6ffe1d
 	github.com/threefoldtech/zbus v1.0.1
-	github.com/threefoldtech/zosbase v0.1.10
+	github.com/threefoldtech/zosbase v1.0.3
 	github.com/urfave/cli/v2 v2.17.2-0.20221006022127-8f469abc00aa
 	github.com/vishvananda/netlink v1.1.1-0.20201029203352-d40f9887b852
 	github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f // indirect
-	golang.org/x/crypto v0.33.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/crypto v0.37.0 // indirect
+	golang.org/x/sys v0.32.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -113,6 +113,10 @@ require (
 	github.com/philhofer/fwd v1.1.1 // indirect
 	github.com/pierrec/lz4 v2.3.0+incompatible // indirect
 	github.com/pierrec/xxHash v0.1.5 // indirect
+	github.com/pion/dtls/v2 v2.2.7 // indirect
+	github.com/pion/logging v0.2.2 // indirect
+	github.com/pion/stun v0.6.1 // indirect
+	github.com/pion/transport/v2 v2.2.1 // indirect
 	github.com/pkg/xattr v0.4.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
@@ -141,8 +145,8 @@ require (
 	go.uber.org/mock v0.5.2 // indirect
 	golang.org/x/mod v0.23.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
-	golang.org/x/sync v0.12.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
+	golang.org/x/sync v0.13.0 // indirect
+	golang.org/x/text v0.24.0 // indirect
 	golang.zx2c4.com/wireguard v0.0.20200320 // indirect
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20200609130330-bd2cb7843e1b // indirect
 	gonum.org/v1/gonum v0.16.0 // indirect
