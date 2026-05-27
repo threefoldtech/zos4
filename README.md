@@ -1,4 +1,4 @@
-# Zero-OS v4 ![Tests](https://github.com/threefoldtech/zos4/workflows/Tests%20and%20Coverage/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/threefoldtech/zos)](https://goreportcard.com/report/github.com/threefoldtech/zos)
+# Zero-OS v4 ![Tests](https://github.com/threefoldtech/zos_v4/workflows/Tests%20and%20Coverage/badge.svg) [![Go Report Card](https://goreportcard.com/badge/github.com/threefoldtech/zos)](https://goreportcard.com/report/github.com/threefoldtech/zos)
 
 Zero-OS v4 is the next-generation autonomous operating system. It evolves the Zero-OS architecture with new capabilities, improved modularity, and enhanced performance.
 
