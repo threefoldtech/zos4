@@ -42,3 +42,8 @@ source, and once this reservation is available, the node will actually apply it 
 If you have some questions or just want to hang out, you can find us on:
 - telegram: https://t.me/zero_os_tech
 - Matrix: #zero-os:matrix.org
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+Copyright (c) TFTech NV.
