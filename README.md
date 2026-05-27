@@ -20,7 +20,7 @@ If you want to know about the history and decisions that motivated the creation 
 
 ## Role in the stack
 
-Zero-OS v4 is the operating system layer for next-generation nodes. It provides the same foundational services as earlier Zero-OS versions — automated provisioning, networking, storage, and resource management — with an evolved architecture. It sits above the hardware and below user workloads, coordinating with grid infrastructure to receive reservations and report status. Zinit provides service supervision, and zosbase supplies shared primitives.
+Zero-OS v4 is the operating system layer for next-generation nodes. It provides the same foundational services as earlier Zero-OS versions — automated provisioning, networking, storage, and resource management — with an evolved architecture. It sits above the hardware and below user workloads, coordinating with grid infrastructure to receive reservations and report status. ZOS Init provides service supervision, and ZOS Base supplies shared primitives.
 
 ## ZOS / Zero-OS
 
